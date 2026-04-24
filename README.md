@@ -86,7 +86,7 @@ PCGProKit/
 ## Support
 
 Issues and feedback: open an issue on this repository, or contact via the Fab listing page. When reporting, include:
-- Engine version (must be 5.7.4)
+- Engine version (must be 5.7.x)
 - PCGProKit version
 - Minimal repro map (or which demo map reproduces)
 - `PCGVolume` config, template, preset

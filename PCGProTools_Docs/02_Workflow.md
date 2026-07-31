@@ -1,131 +1,253 @@
 # 02 — Workflow
 
-This page covers the day-to-day editor workflow with PCG Pro Tools v1.1: the toolbar, the Graph Inspector, the Template Library, and the Debug Overlay.
+This page covers the v2.0.0 editor workflow: the toolbar, Graph Inspector, Setup Validator, Template Library, Create Editable Copy, and Debug Overlay.
 
 ---
 
-## The Toolbar
+## Toolbar and tabs
 
-PCG Pro Tools adds three buttons to the Level Editor toolbar:
+PCG Pro Tools registers three Level Editor toolbar commands:
 
-| Button | Name | Shortcut |
-|---|---|---|
-| 🔲 | Debug Overlay | toolbar toggle |
-| 📋 | Template Library | toolbar button |
-| 🔍 | Graph Inspector | toolbar button |
+| Tool | Purpose |
+|---|---|
+| **Debug Overlay** | Toggle viewport PCG bounds/debug rendering |
+| **Template Library** | Search, filter, add, or copy graph templates |
+| **Graph Inspector** | Tune selected PCG actors, manage seeds and presets, validate setup |
 
-All three open as dockable tabs and can be repositioned freely within the editor.
+The tools can also be opened through **Window → PCG Pro Tools**. Template Library and Graph Inspector are dockable tabs.
 
 ---
 
 ## Template Library
 
-The Template Library gives you a one-click way to spawn a pre-built PCG graph into the current level.
+The Template Library contains **23 graph templates**.
 
-**How to use:**
-1. Click the **Template Library** toolbar button.
-2. Browse the list of 17 templates.
-3. Click **Add to Level** on the template you want.
-4. The plugin spawns a **PCGVolume** at the camera position, assigns the template graph, and (for templates that require it) spawns any helper actors (splines, etc.) and wires them up automatically.
-5. Press **Generate** to run the graph.
+### Search and filters
 
-**Templates that require a Landscape** (e.g. `PCGT_HillsideVegetation`, `PCGT_LandscapeLayerSampler`) will warn you if no Landscape actor is present in the level before spawning.
+- Search is case-insensitive.
+- Search matches the template **asset name**.
+- Search and category filters work together.
+- Categories: **All, Scatter, Filter, Spline, Landscape, Water, Utility**.
 
-**Templates that require a spline** (e.g. `PCGT_SplineRoad`, `PCGT_SplineAvoidance`) automatically spawn a helper spline actor tagged with the correct Actor Tag and assign it to the node's `SplineActors` reference.
+> Search does not inspect a separate display name or description. Use terms from asset names such as `Spline`, `Forest`, `Distance`, or `Biome`.
+
+### Add to Level
+
+1. Open **Template Library**.
+2. Search or choose a category.
+3. Select a template.
+4. Click **Add to Level**.
+5. The plugin spawns an `APCGVolume` at the camera look point.
+6. Default bounds are approximately `20000 × 20000 × 5000`.
+7. The template graph is assigned to the PCG component.
+8. Landscape-dependent templates first verify that a Landscape exists.
+
+Generation behavior depends on the template:
+
+- Most landscape/scatter templates use **On Load**.
+- Spline and water workflows commonly use **On Demand**.
+- Roadside Generator, Spline Road, and Spline Avoidance create their documented helper spline actors.
+- Not every template creates helper actors. Review the [Template Reference](03_Templates.md).
+
+### Create Editable Copy
+
+Use the template context menu **Copy** action to create a project-owned copy.
+
+- Destination: `/Game/PCG/`
+- Names: `{Template}_Copy`, `{Template}_Copy2`, `{Template}_Copy3`, …
+- The copied graph opens automatically in the PCG Graph Editor.
+- The operation creates an asset and is not undoable through Ctrl+Z.
+
+Use editable copies instead of modifying templates in plugin content.
 
 ---
 
 ## Graph Inspector
 
-The Graph Inspector (formerly called Quick Tune) lets you inspect and edit node parameters of a selected PCG actor without opening the PCG Graph editor.
+The Graph Inspector tab is implemented by `SPCGQuickTuneWidget`.
 
-**How to use:**
-1. Select a **PCGVolume** or any actor with a **PCGComponent** in the level.
-2. Click the **Graph Inspector** toolbar button (or right-click the actor → **Open in PCG Graph Inspector**).
-3. The top half shows the graph's **exposed parameters** (native UE Graph Instance parameters).
-4. The bottom half shows a **read-only overview** of all `PCG_Overridable` node properties across every node in the graph, grouped by node.
+### Selecting a component
 
-> **Note:** To make a parameter directly editable, open the PCG Graph, right-click the property on a node, and choose **Expose to Graph Instance**. It will then appear in the editable top section of the Inspector.
+1. Select a `PCGVolume` or another actor with a `PCGComponent`.
+2. Open **Graph Inspector**.
+3. The Inspector uses the selected PCG component and its graph.
+
+### Upper panel: exposed graph parameters
+
+The upper `SDetailsView` displays native `UPCGGraphInstance` parameters that have been exposed from the graph.
+
+- These values are editable.
+- This panel is empty when the graph has no exposed parameters.
+
+### Lower panel: node parameters
+
+The lower panel displays **all supported `PCG_Overridable` properties** from nodes in the graph.
+
+- Properties are grouped by node.
+- Supported direct editor types: Float, Int32, and Bool.
+- `ClampMin` and `ClampMax` metadata are respected.
+- Values are editable without opening the graph.
+- Each supported property has a **Reset** button that restores the C++ default.
+
+This panel is independent of graph-exposed parameters. It can contain entries even when the upper panel is empty.
+
+---
+
+## Seed Controls
+
+The Graph Inspector changes `PCGComponent.Seed`.
+
+Available controls:
+
+- Previous seed: `-1`
+- Next seed: `+1`
+- Randomize
+- Direct seed entry
+- Seed Lock
+
+When Seed Lock is enabled:
+
+- Previous and next controls are blocked.
+- Randomize is blocked.
+- Direct editing is read-only.
+
+Seed Lock is widget state. It is not stored on the component, in the level, or in config, and resets when the Inspector/editor session is recreated.
+
+When Auto-Regenerate is enabled, a seed change regenerates the selected component.
+
+---
+
+## Point Count
+
+The Graph Inspector reads `PCGComponent->GetPCGData()` and counts points across all available component outputs.
+
+The value refreshes after regeneration. It is a component-level total, not a count for one selected node.
+
+---
+
+## Auto-Regenerate and regeneration controls
 
 ### Auto-Regenerate
 
-When **Auto-Regenerate** is enabled (checkbox at the top of the Inspector), the PCG graph re-generates automatically whenever you finish editing an exposed parameter. Disable it when tweaking multiple parameters at once to avoid redundant regeneration.
+When enabled, a completed supported property edit triggers regeneration through `OnPropertyFinishedChanging`.
 
-### Presets in the Graph Inspector
+Disable Auto-Regenerate when making several changes before a manual refresh.
 
-The Inspector has a **Preset** dropdown:
+### Manual controls
 
-- **Apply Preset** — writes all stored overrides from the selected preset into the matching nodes of the current graph. Supports Undo.
-- **Save as Preset** — opens a save dialog, captures all current `PCG_Overridable` values from the graph as a new `UPCGProKitPresetAsset`, and saves it to your chosen location.
+- **Regenerate Selected** regenerates selected PCG actors/components.
+- **Regenerate All** runs the broader regeneration action exposed by the widget.
 
-See [`05_Presets.md`](05_Presets.md) for the full preset workflow.
+### Undo, Redo, and Reset
+
+The Graph Inspector registers as an editor Undo client.
+
+After Undo, Redo, or Reset:
+
+1. It waits for an active PCG generation to finish.
+2. It flushes the selected component cache.
+3. It calls local regeneration.
+
+The retry ticker can cause a short delay, normally below one second.
+
+---
+
+## Presets
+
+The Graph Inspector provides:
+
+- **Apply Preset**
+- **Save as Preset**
+- **Refresh Presets**
+
+Apply writes compatible property overrides into matching node settings classes. Incompatible overrides are skipped.
+
+Save captures supported `PCG_Overridable` Float, Int32, Bool, and enum-as-Int32 values into a `UPCGProKitPresetAsset` through the Content Browser save dialog.
+
+See [05 — Presets](05_Presets.md).
+
+---
+
+## Setup Validator
+
+Click **Validate** in the Graph Inspector.
+
+The validator checks the selected graph for supported requirements, including:
+
+| Workflow | Validation |
+|---|---|
+| Spline Avoidance | Configured tag/reference and matching loaded spline actor |
+| Align To Nearest Spline | Configured tag/reference and matching loaded spline actor |
+| Distance To Nearest Tag | Required Actor Selection Tag and matching loaded actor |
+| Landscape workflows | A Landscape actor exists |
+| Water Body Avoidance | An `AWaterBody`-derived actor exists when the Water plugin is loaded |
+| Roadside Generator | An actor with tag `Road` exists |
+
+The validator:
+
+- Is read-only and does not repair the level.
+- Checks loaded actors only.
+- Can report missing actors in World Partition when the required cell is not loaded.
+- Displays either a success dialog or a numbered warning list.
 
 ---
 
 ## Debug Overlay
 
-The Debug Overlay draws bounding boxes around PCG actors in the editor viewport so you can see at a glance which actors have been generated.
+The Debug Overlay draws PCG component bounds and labels in the editor viewport.
 
-**Toggle:** click the **Debug Overlay** toolbar button. Click again to disable.
+### Scope
 
-### Scope settings
+Configure under **Project Settings → Plugins → PCG Pro Tools**:
 
-Control which actors are drawn via **Project Settings → Plugins → PCG Pro Tools → Debug Overlay**:
+| Setting | Default |
+|---|---:|
+| `OverlayScope` | SelectedOnly |
+| `OverlayViewportMaxDistance` | 100000 cm |
+| `MaxPointsPerComponent` | 5000 |
+| `bShowLabelsOnlyForSelected` | true |
+| `AttributeLabelDrawDistance` | 5000 cm |
 
-| Scope | Description |
-|---|---|
-| Selected Only | (default) Only selected PCG actors |
-| All In Active Viewport | All PCG actors within `OverlayViewportMaxDistance` of the camera |
-| All In Level | Every PCG actor in the editor world (can drop FPS on large levels) |
+Available scope values:
 
-Additional settings:
+- Selected Only
+- All In Active Viewport
+- All In Level
 
-| Setting | Default | Description |
-|---|---|---|
-| `OverlayViewportMaxDistance` | 100 000 cm | Draw distance for the viewport scope |
-| `MaxPointsPerComponent` | 5 000 | Max points processed per component for overlay labels |
-| `bShowLabelsOnlyForSelected` | true | Attribute labels only on selected actors |
-| `AttributeLabelDrawDistance` | 5 000 cm | Max distance for drawing attribute labels |
+### Node Type Debug Filter
 
----
+v2.0.0 adds a persistent node-type filter:
 
-## Project Settings
+- `bEnableNodeTypeFilter`
+- `DebugNodeTypeFilter`
 
-**Edit → Project Settings → Plugins → PCG Pro Tools** exposes:
+The Graph Inspector checkboxes update the filter and save it through `SaveConfig()`.
 
-### Performance Guards
-
-| Setting | Default | Description |
-|---|---|---|
-| `DensityCapWarningThreshold` | 1 000 000 | Shows an editor notification when a node outputs more points than this. Set to 0 to disable. |
-
-### Determinism
-
-| Setting | Default | Description |
-|---|---|---|
-| `bDeterministicMode` | false | Forces all PCG Pro Tools nodes that use randomness to use `DefaultRandomSeed` |
-| `DefaultRandomSeed` | 42 | Global seed used when deterministic mode is on |
+The filter applies to PCG components generally, not only nodes supplied by PCG Pro Tools.
 
 ---
 
-## Recommended workflow for a new scene
+## Recommended workflow
 
-1. **Spawn a template** via the Template Library as a starting point.
-2. **Open the Graph Inspector** — use the read-only node param overview to understand what each node is doing.
-3. **Expose the parameters you care about** in the PCG Graph editor.
-4. **Tune parameters** in the Graph Inspector with Auto-Regenerate on.
-5. **Save a Preset** once you have settings you like, so you can reapply them to other actors.
-6. **Enable the Debug Overlay** to check actor coverage at a glance.
-7. **Use Print Stats nodes** in the graph during development — disable them (`bPrintEnabled = false`) before shipping.
-
----
-
-## Important rules
-
-- **Always assign `SplineActors` or `SplineActorTag` explicitly** when using Spline Avoidance or Align To Nearest Spline in async PCG execution (the default). The auto-discovery fallback only works in synchronous execution.
-- **Always assign `WaterBodyActors` explicitly** in async execution for the same reason.
-- **Always assign `LandscapeRef`** for Project To Landscape and Height Filter in cooked builds.
+1. Add a template through the Template Library.
+2. Use **Create Editable Copy** before structural graph changes.
+3. Select the PCG actor and open Graph Inspector.
+4. Validate the setup.
+5. Tune exposed and node-level parameters.
+6. Explore a result with seed controls, then lock the chosen seed.
+7. Apply or save a preset.
+8. Use the point count and Debug Overlay to inspect the result.
+9. Verify runtime reference requirements before packaging.
 
 ---
 
-Next: [`03_Templates.md`](03_Templates.md)
+## Important runtime notes
+
+- Landscape Layer Sampler is editor-only and becomes passthrough in non-editor builds.
+- Spline tags work in editor and cooked builds. Direct soft actor references require the actor to be packaged and loaded.
+- Assign `LandscapeRef` explicitly for cooked Height Filter and Project To Landscape workflows.
+- Water Body Avoidance needs the Water plugin enabled in the consuming project.
+
+---
+
+Next: [03 — Templates](03_Templates.md)

@@ -1,199 +1,257 @@
 # 03 — Templates
 
-PCG Pro Tools ships with **17 graph templates** in `Plugins/PCGProKit Content/Templates/`.
+PCG Pro Tools v2.0.0 includes **23 graph templates** in `Plugins/PCGProKit Content/Templates/`.
 
-Templates are ready-to-use PCG graphs wired up to showcase one or more nodes. Spawn them into your level via the **Template Library** toolbar panel, or open them directly in the Content Browser.
+Templates can be added through the Template Library or opened directly from plugin content.
 
-> **Important:** Do not edit template assets in place. Always duplicate a template into your own project content folder before customising it.
-
----
-
-## Spawning a template
-
-1. Click the **Template Library** button in the Level Editor toolbar.
-2. Find the template you want and click **Add to Level**.
-3. A PCGVolume is spawned at the camera position with the template graph assigned.
-4. For templates that require a spline or water body actor, the plugin spawns those helpers automatically and wires them to the volume.
-5. Press **Generate** on the PCGVolume to run the graph.
+> Do not edit shipped template assets in place. Use **Create Editable Copy** to copy a template into `/Game/PCG/`.
 
 ---
 
-## Template reference
+## Template Library behavior
+
+### Search
+
+Search is case-insensitive and matches the asset name.
+
+### Categories
+
+Categories are assigned by the Template Library from asset-name substrings:
+
+- Scatter
+- Filter
+- Spline
+- Landscape
+- Water
+- Utility
+
+Because this is name-based, some categories describe library organization rather than the exact node class category.
+
+### Add to Level
+
+Add to Level creates an `APCGVolume` at the camera look point and assigns the selected graph. Default volume bounds are approximately `20000 × 20000 × 5000`.
+
+Landscape-dependent templates verify that a Landscape exists before setup.
+
+---
+
+## Quick reference
+
+| Template | Library category | Demo map | Requirements | Add to Level | Generation |
+|---|---|---|---|---|---|
+| `PCGT_BiomeMask` | Landscape | `Demo_BiomeMask` | Landscape | PCGVolume | On Load |
+| `PCGT_BiomeTransition` | Landscape | `Demo_BiomeTransition` | Landscape | PCGVolume | On Load |
+| `PCGT_BoundaryDetect` | Spline | `Demo_BoundaryDetect` | Landscape | PCGVolume | On Load |
+| `PCGT_ClumpScatter` | Scatter | `Demo_ClumpScatter` | Landscape | PCGVolume | On Load |
+| `PCGT_CurvatureFilter` | Filter | `Demo_CurvatureFilter` | Landscape | PCGVolume | On Load |
+| `PCGT_DistanceLOD` | Landscape | `Demo_DistanceLOD` | Landscape | PCGVolume | On Load |
+| `PCGT_DistanceTag` | Landscape | `Demo_DistanceTag` | Landscape, POI actors tagged `POI` | PCGVolume | On Load |
+| `PCGT_ForestSetup` | Landscape | `Demo_ForestSetup` | Landscape | PCGVolume | On Load |
+| `PCGT_GridSnap` | Scatter | `Demo_GridSnap` | Landscape | PCGVolume | On Load |
+| `PCGT_HillsideVegetation` | Landscape | `Demo_HillsideVegetation` | Landscape | PCGVolume | On Load |
+| `PCGT_InstanceVariation` | Utility | `Demo_InstanceVariation` | Landscape | PCGVolume | On Load |
+| `PCGT_LandscapeLayerSampler` | Landscape | `Demo_LandscapeLayerSampler` | Painted Landscape layer | PCGVolume | On Load |
+| `PCGT_NaturalForestScatter` | Scatter | — | Landscape | PCGVolume | On Load |
+| `PCGT_NoiseMaskFilter` | Filter | `Demo_NoiseMaskFilter` | Landscape | PCGVolume | On Load |
+| `PCGT_PrintStats` | Utility | — | None | PCGVolume | On Load |
+| `PCGT_RandomSubset` | Utility | `Demo_RandomSubset` | Landscape | PCGVolume | On Load |
+| `PCGT_RelaxPoints` | Utility | `Demo_RelaxPoints` | Landscape | PCGVolume | On Load |
+| `PCGT_RoadsideGenerator` | Spline | `Demo_RoadsideGenerator` | Spline actor tagged `Road` | RoadSpline + PCGVolume | On Demand |
+| `PCGT_SplineAvoidance` | Spline | `Demo_SplineAvoidance` | Spline | AvoidanceSpline + PCGVolume | On Demand |
+| `PCGT_SplineOffset` | Spline | `Demo_SplineOffset` | Spline-sampled direction data | PCGVolume | On Demand |
+| `PCGT_SplineRoad` | Spline | `Demo_SplineRoad` | Spline actor tagged `Road` | RoadSpline + PCGVolume | On Demand |
+| `PCGT_WaterBodyAvoidance` | Water | `Demo_WaterBodyAvoidance` | Water plugin and Water Body actor | PCGVolume | On Demand |
+| `PCGT_WeightedSelection` | Utility | `Demo_WeightedSelection` | Landscape | PCGVolume | On Load |
+
+---
+
+## New v2.0.0 templates
+
+### PCGT_InstanceVariation
+
+Applies randomized scale, rotation, and point color before spawning.
+
+**Key node:** Instance Variation
+
+For tree-style yaw-only variation, set Pitch Jitter and Roll Jitter to `0` while keeping Yaw Jitter above `0`.
+
+Point color must be transferred and read by the material/spawner workflow described in [Instance Variation](04_Nodes.md#instance-variation).
+
+---
+
+### PCGT_SplineOffset
+
+Moves spline-sampled points laterally.
+
+**Key node:** Spline Offset
+
+Supports:
+
+- Both sides through `ScatterWidth`
+- Left only through `LeftWidth`
+- Right only through `RightWidth`
+- Center-to-edge density falloff
+
+The node moves existing input points. It does not create new points.
+
+---
+
+### PCGT_DistanceLOD
+
+Reduces point density based on distance to `FixedLocation`.
+
+**Key node:** Distance LOD
+
+The node changes Density only. Add a density-aware filter or spawner behavior when points must be fully removed.
+
+---
+
+### PCGT_RandomSubset
+
+Keeps a deterministic percentage of input points.
+
+**Key node:** Random Subset
+
+`KeepPercentage` is percentage-based. There is no count mode.
+
+---
+
+### PCGT_BiomeMask
+
+Shapes density radially from the PCG volume center and detects transition boundaries from local point neighborhoods.
+
+**Key node:** Biome Mask
+
+Use downstream density filters or separate spawners to turn the generated density ranges into visible biome regions.
+
+This template does not require an external biome actor or shape.
+
+---
+
+### PCGT_RoadsideGenerator
+
+Prepared roadside workflow for vegetation or props along a road spline.
+
+**Add to Level creates:**
+
+- A helper `RoadSpline`
+- A PCGVolume
+- Required `Road` tag setup
+
+**Key nodes:** Spline Offset, Spline Avoidance, Static Mesh Spawner
+
+**Generation:** On Demand  
+**Landscape required:** No
+
+Included presets:
+
+- Roadside Highway
+- Roadside Avenue
+- Roadside Natural
+
+#### Example mesh
+
+The default spawner uses the example tree mesh:
+
+```text
+/PCG/SampleContent/SimpleForest/Meshes/PCG_Tree_01
+```
+
+This asset is provided through Unreal Engine's required built-in PCG plugin and is used for demonstration. Replace it with a mesh from your own project for production use.
+
+---
+
+## Existing templates
 
 ### PCGT_BiomeTransition
-**Demo map:** `Demo_BiomeTransition`
 
-Blends two biomes using a Noise Mask Filter. Points in the noise-high region use one asset set, points in the noise-low region use another. Combine with Weighted Selection By Tag for multi-asset transitions.
-
-**Key nodes:** Noise Mask Filter, Weighted Selection By Tag
-
----
+Multi-node biome transition workflow. Updated in v2.0.0 to match the current biome setup.
 
 ### PCGT_BoundaryDetect
-**Demo map:** `Demo_BoundaryDetect`
 
-Marks boundary points of a point cloud with a `bIsBoundary` bool attribute. Filter on that attribute downstream to place edge-specific assets (fence posts, border rocks, etc.).
-
-**Key nodes:** Boundary Detect
-
----
+Marks edge points using the `bIsBoundary` attribute for border-specific placement.
 
 ### PCGT_ClumpScatter
-**Demo map:** `Demo_ClumpScatter`
 
-Converts a sparse even distribution into organic clusters. Each input point becomes a clump center with child points scattered around it. Scale falloff creates natural edge thinning.
-
-**Key nodes:** Blue Noise Scatter, Clump Scatter
-
----
+Creates organic child-point groups from sparse source points.
 
 ### PCGT_CurvatureFilter
-**Demo map:** `Demo_CurvatureFilter`
 
-Filters points by terrain slope angle. Use to spawn trees only on flat ground and rocks only on steep faces.
+Filters points by terrain slope.
 
-**Key nodes:** Slope Filter
-
-> **Note:** This template was called `SurfaceSlopeFilter` in v1.0. The underlying node class is `UPCGCurvatureFilterSettings`; its display name is **PCG Pro: Slope Filter**.
-
----
+**Public node name:** PCG Pro: Curvature Filter  
+**C++ class:** `UPCGCurvatureFilterSettings`
 
 ### PCGT_DistanceTag
-**Demo map:** `Demo_DistanceTag`
 
-Writes the distance from each point to the nearest point in a tagged secondary dataset as a float attribute. Use downstream to drive scale, density, or material selection.
+Measures point distance to externally selected POI actors.
 
-**Key nodes:** Distance To Nearest Tag
+The v2 version uses Get Actor Data with actor tag `POI`, multi-selection, target tagging, and corrected inside filtering.
 
----
+### PCGT_ForestSetup
 
- ### PCGT_ForestSetup
- **Demo map:** `Demo_ForestSetup`
- 
-> **v1.0 users:** This template was called `PCGT_VillageCorner` (`DemoVillageCorner`) in v1.0 and has been renamed and reworked into a full forest pipeline in v1.1.
-
- Full forest pipeline: surface sample → Blue Noise Scatter → Relax Points → Slope Filter → Noise Mask Filter → Clump Scatter. Requires a Landscape.
-
-**Key nodes:** Blue Noise Scatter, Relax Points, Slope Filter, Noise Mask Filter, Clump Scatter
-
----
+Full forest pipeline combining spacing, slope, noise, and clump controls.
 
 ### PCGT_GridSnap
-**Demo map:** `Demo_GridSnap`
 
-Snaps point positions to a world-space grid and optionally snaps yaw to 90° increments. Use for modular building placement and grid-aligned prop layouts.
-
-> **v1.0 users:** this template was called `PCGT_GridBuildings` in v1.0 and has been renamed to `PCGT_GridSnap` in v1.1.
-
-**Key nodes:** Grid Snap
-
----
+Snaps placement and optional yaw to a world grid.
 
 ### PCGT_HillsideVegetation
-**Demo map:** `Demo_HillsideVegetation`
 
-Combines slope filtering and height filtering to place vegetation only on the appropriate terrain band. Requires a Landscape.
-
-**Key nodes:** Slope Filter, Height Filter, Project To Landscape
-
----
+Combines slope, height, and Landscape projection for terrain bands.
 
 ### PCGT_LandscapeLayerSampler
-**Demo map:** `Demo_LandscapeLayerSampler`
 
-Filters and modulates points based on a Landscape paint-layer weight. Spawn grass only on the Grass layer, rocks only on the Rocky layer, etc.
+Drives editor-time placement from a painted Landscape layer.
 
-**Key nodes:** Landscape Layer Sampler
-
-**Requires:** A Landscape with at least one painted layer.
-
----
+> Landscape Layer Sampler is not a runtime filter. In non-editor builds it passes points through unchanged.
 
 ### PCGT_NaturalForestScatter
-**Demo map:** `Demo_ForestSetup`
 
-A lighter forest template focused on natural scatter quality. Blue Noise Scatter → Relax Points gives an even, non-grid distribution without the full pipeline weight of `PCGT_ForestSetup`.
-
-**Key nodes:** Blue Noise Scatter, Relax Points
-
----
+Lighter natural-scatter workflow based on spacing and relaxation.
 
 ### PCGT_NoiseMaskFilter
-**Demo map:** `Demo_NoiseMaskFilter`
 
-Breaks up uniform coverage with a Perlin noise mask. Clearings and dense patches emerge naturally without any additional geometry.
-
-**Key nodes:** Noise Mask Filter
-
----
+Creates clearings and organic coverage through a noise threshold.
 
 ### PCGT_PrintStats
-**Demo map:** *(use any graph)*
 
-A debug utility template with Print Stats nodes placed at key pipeline stages. Shows how to label checkpoints and selectively disable logging.
-
-**Key nodes:** Print Stats
-
----
+Shows Print Stats nodes as pipeline checkpoints.
 
 ### PCGT_RelaxPoints
-**Demo map:** `Demo_RelaxPoints`
 
-Demonstrates Lloyd relaxation. Random points in → evenly spaced points out. Compare the before/after Print Stats output to see the effect.
-
-**Key nodes:** Relax Points, Print Stats
-
----
+Demonstrates iterative neighbor-based point relaxation.
 
 ### PCGT_SplineAvoidance
-**Demo map:** `Demo_SplineAvoidance`
 
-Removes points near a road spline to keep vegetation clear of the path. A soft `FalloffRadius` blends density at the edge instead of a hard cut.
-
-**Key nodes:** Spline Avoidance
-
-**Requires:** A spline actor. The template auto-spawns one and sets `SplineActorTag` to `Road`.
-
----
+Clears or attenuates points around a helper spline.
 
 ### PCGT_SplineRoad
-**Demo map:** `Demo_SplineRoad`
 
-Full roadside dressing pipeline. Spline Avoidance clears the road centre; Align To Nearest Spline rotates props to face the road direction; Density Falloff thins props away from the road.
-
-**Key nodes:** Spline Avoidance, Align To Nearest Spline, Density Falloff
-
-**Requires:** A spline actor with Actor Tag `Road`. The template auto-spawns one.
-
----
+Roadside alignment and avoidance workflow using a helper spline tagged `Road`.
 
 ### PCGT_WaterBodyAvoidance
-**Demo map:** `Demo_WaterBodyAvoidance`
 
-Removes points within a radius of any UE Water body (River, Lake, Ocean, Custom). Optional invert mode keeps only riverbank/lakeshore points.
-
-**Key nodes:** Water Body Avoidance
-
-**Requires:** The UE Water plugin enabled and at least one Water Body actor in the level.
-
----
+Clears or keeps points near `AWaterBody` splines. Requires the Water plugin in the consuming project.
 
 ### PCGT_WeightedSelection
-**Demo map:** `Demo_WeightedSelection`
 
-Samples from several tagged point datasets by relative weight. Use to drive biome-aware asset selection where one biome should appear three times as often as another.
-
-**Key nodes:** Weighted Selection By Tag
+Selects from tagged input datasets using relative weights.
 
 ---
 
-## Customising a template
+## Create Editable Copy
 
-1. In the Content Browser, right-click the template → **Duplicate**.
-2. Move the duplicate into your project content folder (outside `Plugins/`).
-3. Open the PCGVolume in your level → swap its graph to the duplicate.
-4. Edit freely.
+1. Open Template Library.
+2. Open the template context menu.
+3. Select **Copy**.
+4. The plugin creates a copy under `/Game/PCG/`.
+5. The graph opens automatically.
+
+Naming is deduplicated with `_Copy`, `_Copy2`, `_Copy3`, and so on.
+
+The operation is not undoable through the editor transaction system.
 
 ---
 
-Next: [`04_Nodes.md`](04_Nodes.md)
+Next: [04 — Nodes](04_Nodes.md)

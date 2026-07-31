@@ -1,93 +1,284 @@
 # 09 — Changelog
 
+## v2.0.0 — Major Update
+
+**Engine:** Unreal Engine 5.8  
+**Previous public release:** v1.1.1
+
+PCG Pro Tools v2.0.0 adds five custom nodes, six templates, nine presets, six demo maps, expanded editor tooling, setup validation, and stability improvements.
+
+Existing v1.1.1 graphs remain compatible. No v1.1.1-to-v2.0.0 asset rename or Core Redirect is required.
+
+The existing `UPCGCurvatureFilterSettings` node now uses the public display title **PCG Pro: Curvature Filter**. Its C++ class and template asset remain unchanged, so existing graphs do not require migration.
+
 ---
 
-## v1.1.0
+### New custom PCG nodes
 
-### New nodes (7)
+#### Instance Variation
 
-| Node | Class | Description |
-|---|---|---|
-| Clump Scatter | `UPCGClumpScatterSettings` | Converts each input point into an organic cluster of child points with optional scale falloff |
-| Relax Points | `UPCGRelaxPointsSettings` | Lloyd-relaxation for evenly spaced, non-clustered point distributions |
-| Noise Mask Filter | `UPCGNoiseMaskFilterSettings` | Perlin-noise mask filter for organic density variation and clearings |
-| Spline Avoidance | `UPCGSplineAvoidanceSettings` | Removes or attenuates points near spline actors; supports soft falloff and invert mode |
-| Water Body Avoidance | `UPCGWaterBodyAvoidanceSettings` | Removes or attenuates points near UE Water body splines; no hard Water plugin dependency |
-| Landscape Layer Sampler | `UPCGLandscapeLayerSamplerSettings` | Filters and modulates points based on Landscape paint-layer weight |
-| Print Stats | `UPCGPrintStatsSettings` | Passthrough debug node that logs point count, bounds, Z range, and density to the Output Log |
+Randomizes:
 
-### Renamed (v1.0 → v1.1)
+- Uniform or independent-axis scale
+- Yaw, pitch, and roll jitter
+- Point Color through configurable HSV ranges
 
-| Old name | New name | Notes |
-|---|---|---|
-| `SurfaceSlopeFilter` (node) | **PCG Pro: Slope Filter** | Class `UPCGCurvatureFilterSettings` |
-| `PCGT_VillageCorner` (template) | `PCGT_ForestSetup` | Reworked into a full forest pipeline |
-| `DemoVillageCorner` (map) | `Demo_ForestSetup` | — |
-| `PCGT_GridBuildings` (template) | `PCGT_GridSnap` | — |
+Yaw-only variation is configured by setting Pitch Jitter and Roll Jitter to zero.
 
-> **Breaking change:** Graphs from v1.0 that contained the old `SurfaceSlopeFilter` node will show a broken node after upgrading. Replace the broken node with the new **PCG Pro: Slope Filter** node and re-enter the property values. Level or graph references to `PCGT_VillageCorner` / `DemoVillageCorner` must also be updated.
+#### Spline Offset
 
-### New editor tools
+Moves spline-sampled points laterally with:
 
-- **Debug Overlay** — viewport tick-based overlay that draws bounding boxes around PCG actors. Scope configurable via Project Settings (Selected Only / All In Viewport / All In Level). Uses a delegate-based component cache instead of per-tick world scans.
-  - First activation with `AllVisible` or `AllInLevel` scope shows a one-time performance warning dialog. Confirming saves the acknowledgement to config so it never fires again.
-- **Template Library** — dockable panel listing all 17 templates. Spawns PCGVolume + helper actors (splines, etc.) with one click.
-  - **Refresh** button rescans `/PCGProKit/Templates/` without restarting the editor.
-  - Empty-state message shown when no templates are found (e.g. plugin content not visible).
-- **Graph Inspector** — dockable panel showing all `PCG_Overridable` node parameters of the selected PCG actor. Includes preset dropdown, Auto-Regenerate toggle, and Save as Preset.
-  - **Regenerate Selected** button regenerates **all** currently selected PCG actors at once (bulk regenerate).
-  - **Auto-Regenerate** toggle — when enabled, any parameter edit automatically regenerates the primary selected actor.
-  - Every parameter edit is wrapped in a named transaction (`PCG Quick Tune: Edit {PropertyName}`) — full Undo/Redo via Ctrl+Z.
-- **Actor context menu** — right-clicking a PCG actor in the level now shows **Open in PCG Graph Inspector**.
+- Both, Left Only, and Right Only modes
+- `ScatterWidth` for Both mode
+- Separate `LeftWidth` and `RightWidth`
+- Center-to-edge density falloff
+- Deterministic random offsets
 
-### New preset system
+#### Distance LOD
 
-- `UPCGProKitPresetAsset` — DataAsset storing named property overrides (Float / Int32 / Bool).
-- `FPCGProKitPresetEntry` — one override entry targeting a settings class + property name via FProperty reflection.
-- **Apply Preset** — writes overrides into matching nodes; operation is undoable.
-- **Save as Preset (Snapshot)** — opens a modal name dialog pre-filled with `ActorLabel_Preset`, captures all current `PCG_Overridable` values, saves the asset immediately to `/PCGProKit/Presets/`, and refreshes the dropdown. Shows an error dialog if no overridable parameters are found.
-- **Refresh Presets (↻)** — rescans `/PCGProKit/Presets/` and updates the dropdown without reopening the Inspector.
-- 4 included presets: Beach Sparse, Forest Dense, Mountain Rocky, Urban Grid.
+Reduces Density based on distance to `FixedLocation`.
 
-### New Project Settings
+The node does not delete points; use downstream density-aware filtering or spawning.
 
-Accessible via **Edit → Project Settings → Plugins → PCG Pro Tools**:
+#### Random Subset
 
-| Setting | Default | Description |
-|---|---|---|
-| `OverlayScope` | SelectedOnly | Controls which PCG actors the debug overlay draws |
-| `OverlayViewportMaxDistance` | 100 000 cm | Draw distance in viewport scope mode |
-| `MaxPointsPerComponent` | 5 000 | Max points processed per component for overlay labels |
-| `DensityCapWarningThreshold` | 1 000 000 | Editor notification threshold for high point counts. 0 = off |
-| `bDeterministicMode` | false | Forces all random nodes to use `DefaultRandomSeed` |
-| `DefaultRandomSeed` | 42 | Global seed for deterministic mode |
+Keeps a deterministic percentage of each input dataset.
 
-### New templates (12)
+Includes optional density scaling. No fixed-count mode is included.
 
-Added on top of the templates carried over from v1.0:
+#### Biome Mask
 
-Boundary Detect, Clump Scatter, Curvature Filter, Distance Tag, Grid Snap, Landscape Layer Sampler, Noise Mask Filter, Print Stats, Relax Points, Spline Avoidance, Water Body Avoidance, Weighted Selection
+Shapes Density radially from the PCG volume center and detects transition boundaries through local-neighbor analysis.
 
-*Carried over from v1.0:* Natural Forest Scatter, Biome Transition, Hillside Vegetation, Spline Road.
+Supports Linear, SmoothStep, and Inverse falloff modes. It has no external biome actor/shape input and does not delete points.
 
-### Demo maps reorganized (15 total)
+PCG Pro Tools now includes **22 custom nodes**.
 
-The demo map set was reorganized and expanded from 5 maps in v1.0 to **15 maps** in v1.1. Each map showcases a specific feature or pipeline; some maps combine multiple nodes to demonstrate a complete workflow rather than a single node in isolation.
+---
 
-Demo_BiomeTransition, Demo_BoundaryDetect, Demo_ClumpScatter, Demo_CurvatureFilter, Demo_DistanceTag, Demo_ForestSetup, Demo_GridSnap, Demo_HillsideVegetation, Demo_LandscapeLayerSampler, Demo_NoiseMaskFilter, Demo_RelaxPoints, Demo_SplineAvoidance, Demo_SplineRoad, Demo_WaterBodyAvoidance, Demo_WeightedSelection
+### New templates
 
-### Bug fixes
+- `PCGT_InstanceVariation`
+- `PCGT_SplineOffset`
+- `PCGT_DistanceLOD`
+- `PCGT_RandomSubset`
+- `PCGT_BiomeMask`
+- `PCGT_RoadsideGenerator`
 
-- **Landscape Layer Sampler** now samples paint-layer weight across **all** landscape streaming proxies. Previously it only used the first proxy found, so points over other proxies were silently dropped in World Partition levels. Added an optional `LandscapeRef` property to explicitly target a landscape in multi-landscape levels.
-- **Save as Preset** now saves user presets into the project (`/Game`) via the standard Content Browser dialog instead of into plugin content. Presets created in v1.0/early-v1.1 builds were written to plugin content, where they could be lost on plugin update/re-install. Preset discovery now scans both the plugin's shipped presets and the project.
-- **Spline Avoidance, Align To Nearest Spline, Water Body Avoidance, and Landscape Layer Sampler** now force game-thread execution (`CanExecuteOnlyOnMainThread`). Previously they iterated world actors / read spline & landscape data on PCG worker threads, which could cause intermittent crashes or data races during regeneration. Matches Epic's convention for actor-touching PCG elements. Results are unchanged.
+PCG Pro Tools now includes **23 graph templates**.
 
-### Other changes
+#### Roadside Generator
 
-- All spline nodes (`SplineAvoidance`, `AlignToNearestSpline`) support `SplineActorTag` for actor discovery in addition to explicit `SplineActors` references. (These nodes now run on the game thread, so discovery is reliable in-editor; explicit references are still recommended for cooked builds.)
-- All filter nodes with invert behaviour now expose a consistent `bInvertSelection` / `bInvertFilter` / `bInvertMask` property.
-- Soft falloff (`FalloffRadius` / `FalloffAngle` / `FalloffWidth`) added to Spline Avoidance, Water Body Avoidance, Slope Filter, and Noise Mask Filter.
-- `UPCGProKitSettings::CheckDensityCap` and `CheckDensityCapFromContext` are now public static helpers callable from custom node code.
+Prepared On Demand spline workflow with:
+
+- Road helper spline
+- `Road` Actor Tag setup
+- PCGVolume creation
+- Spline Offset
+- Spline Avoidance
+- Left/right/both-side workflows
+- Three included presets
+
+The default spawner uses `/PCG/SampleContent/SimpleForest/Meshes/PCG_Tree_01` from Unreal Engine's built-in PCG plugin as a visualization example. It can be replaced with a project mesh.
+
+---
+
+### New presets
+
+#### Instance Variation
+
+- `Preset_NaturalTrees`
+- `Preset_WildVegetation`
+
+#### Spline Offset
+
+- `Preset_RoadBorderWide`
+- `Preset_RoadBorderTight`
+
+#### Distance LOD
+
+- `Preset_LODNearOnly`
+- `Preset_LODPerformance`
+
+#### Roadside Generator
+
+- `Preset_RoadsideHighway`
+- `Preset_RoadsideAvenue`
+- `Preset_RoadsideNatural`
+
+### Updated presets
+
+- `Preset_BeachSparse`
+- `Preset_ForestDense`
+- `Preset_MountainRocky`
+- `Preset_UrbanGrid`
+
+Invalid legacy override entries and obsolete property/class references were removed.
+
+PCG Pro Tools now includes **13 presets**: 9 new and 4 updated.
+
+---
+
+### Graph Inspector improvements
+
+- Previous Seed
+- Next Seed
+- Randomize Seed
+- Direct Seed Entry
+- Seed Lock
+- Point-count display
+- Direct editing of supported `PCG_Overridable` node properties
+- Per-property Reset to C++ default
+- Apply, Save, and Refresh Presets
+- Regenerate Selected
+- Regenerate All
+- Improved regeneration after Undo, Redo, and Reset
+
+Seed controls modify `PCGComponent.Seed`.
+
+Seed Lock is widget state and is not persistent across editor restarts.
+
+---
+
+### Setup Validator
+
+Added a read-only Validate action for supported graph requirements.
+
+Checks include:
+
+- Spline tags and loaded spline actors
+- Distance-to-tag Actor Selection Tags
+- Landscape presence
+- Water Body presence when the Water plugin is active
+- `Road` tag requirements for Roadside Generator
+
+Validation shows either a success dialog or a numbered warning list.
+
+---
+
+### Template Library improvements
+
+- Case-insensitive asset-name search
+- Category filters
+- Combined search and category filtering
+- Improved Landscape requirement checks
+- Create Editable Copy into `/Game/PCG/`
+- Automatic deduplicated names
+- Automatic opening in the PCG Graph Editor
+- Improved Add to Level behavior
+
+---
+
+### Debug Overlay improvements
+
+Added persistent Node Type Debug Filter settings:
+
+- `bEnableNodeTypeFilter`
+- `DebugNodeTypeFilter`
+
+The filter is saved through editor config and applies to PCG components generally.
+
+---
+
+### New demo maps
+
+- `Demo_InstanceVariation`
+- `Demo_SplineOffset`
+- `Demo_DistanceLOD`
+- `Demo_RandomSubset`
+- `Demo_BiomeMask`
+- `Demo_RoadsideGenerator`
+
+PCG Pro Tools now includes **21 demo maps**.
+
+---
+
+### Updated demo maps and workflows
+
+- Updated `Demo_BiomeTransition`
+- Updated `Demo_SplineRoad`
+- Updated `Demo_SplineAvoidance`
+- Improved supported spline live updates
+
+#### Fixed Demo_DistanceTag from v1.1.1
+
+The shipped v1.1.1 demo graph was incorrectly configured.
+
+v2.0.0:
+
+- Replaces the incorrect secondary Surface Sampler target
+- Uses Get Actor Data with Actor Tag `POI`
+- Enables Select Multiple
+- Adds target tag `TargetPoints`
+- Corrects the inverted Attribute Filter
+- Restores external POI detection
+- Supports live regeneration when relevant POI actors move or change tags
+
+---
+
+### Fixes and stability
+
+- Removed invalid legacy preset override entries
+- Removed obsolete preset property/class references
+- Improved PCG regeneration after Undo and Redo
+- Improved Reset regeneration reliability
+- Improved regeneration while Auto-Regenerate is active
+- Improved helper spline setup
+- Improved live updates for spline workflows
+- Corrected Distance Tag demo target-data and filtering setup
+
+---
+
+### Content totals
+
+| Category | v1.1.1 | v2.0.0 |
+|---|---:|---:|
+| Custom nodes | 17 | 22 |
+| Templates | 17 | 23 |
+| Presets | 4 | 13 |
+| Demo maps | 15 | 21 |
+
+---
+
+### Runtime notes
+
+- v2.0.0 targets Unreal Engine 5.8.
+- Landscape Layer Sampler remains editor-only and becomes passthrough in non-editor builds.
+- Spline tags are recommended for cooked spline workflows.
+- Height Filter and Project To Landscape should use explicit Landscape references in cooked builds.
+- Distance LOD and Biome Mask modify Density rather than deleting points.
+- No custom mesh or environment art assets are included.
+
+---
+
+## v1.1.x
+
+The previous public v1.1.1 feature inventory contained:
+
+- 17 custom nodes
+- 17 templates
+- 4 presets
+- 15 demo maps
+
+### v1.1.0 feature release
+
+Added:
+
+- Clump Scatter
+- Relax Points
+- Noise Mask Filter
+- Spline Avoidance
+- Water Body Avoidance
+- Landscape Layer Sampler
+- Print Stats
+- Debug Overlay
+- Template Library
+- Graph Inspector
+- DataAsset-based preset system
+- Expanded templates and demo maps
+
+Historical v1.0-to-v1.1 changes included the rename from `SurfaceSlopeFilter` to the v1.1 public title **PCG Pro: Slope Filter**, plus template/map renames. In v2.0.0 the same `UPCGCurvatureFilterSettings` class is displayed as **PCG Pro: Curvature Filter**. The v2 title change does not require graph migration.
 
 ---
 
@@ -95,12 +286,8 @@ Demo_BiomeTransition, Demo_BoundaryDetect, Demo_ClumpScatter, Demo_CurvatureFilt
 
 Initial release.
 
-**10 nodes:** Blue Noise Scatter, Boundary Detect, Density Falloff, Distance To Nearest Tag, Grid Snap, Height Filter, Project To Landscape, Align To Nearest Spline, Slope Filter (then called SurfaceSlopeFilter), Weighted Selection By Tag.
-
-**6 templates:** Village Corner, Grid Buildings, Natural Forest Scatter, Biome Transition, Hillside Vegetation, Spline Road.
-
-**4 presets:** Beach Sparse, Forest Dense, Mountain Rocky, Urban Grid.
-
-**5 demo maps:** one per original template.
-
-**Platforms:** Win64 validated.
+- 10 custom nodes
+- 6 templates
+- 4 presets
+- 5 demo maps
+- Win64 validated

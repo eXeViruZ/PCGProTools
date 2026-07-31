@@ -1,55 +1,65 @@
 # PCG Pro Tools — Documentation Index
 
-**Version:** 1.1.0 · **Engine:** Unreal Engine 5.7 · **Author:** Tom Leon Vincent Hanke
+**Version:** 2.0.0 · **Engine:** Unreal Engine 5.8 · **Author:** Tom Leon Vincent Hanke
 
 ---
 
 ## Documents
 
-| # | File | What you find there |
+| # | File | Contents |
 |---|---|---|
-| — | [README](../README.md) | Overview, quickstart, node list, layout |
-| 01 | [Installation](01_Installation.md) | Requirements, install options, first launch checklist, upgrade from v1.0 |
-| 02 | [Workflow](02_Workflow.md) | Toolbar, Template Library, Graph Inspector, Debug Overlay, Project Settings |
-| 03 | [Templates](03_Templates.md) | All 17 templates — purpose, required actors, key nodes |
-| 04 | [Nodes](04_Nodes.md) | All 17 nodes — full property tables, tips, and use cases |
-| 05 | [Presets](05_Presets.md) | Preset system, applying, saving snapshots, manual authoring, property reference |
-| 06 | [Runtime Usage](06_Runtime_Usage.md) | Cooked builds, async execution, explicit references, packaging checklist |
-| 07 | [API Reference](07_API_Reference.md) | C++ classes, enums, Build.cs, module structure |
-| 08 | [Troubleshooting](08_Troubleshooting.md) | Common problems and fixes |
-| 09 | [Changelog](09_Changelog.md) | v1.1.0 and v1.0.0 release notes |
+| — | [README](../README.md) | Product overview, requirements, quick start, and content totals |
+| 01 | [Installation](01_Installation.md) | Installation, first launch, demo maps, and v1.1.1 upgrade |
+| 02 | [Workflow](02_Workflow.md) | Graph Inspector, Template Library, Setup Validator, Debug Overlay |
+| 03 | [Templates](03_Templates.md) | All 23 templates, requirements, categories, and Add to Level behavior |
+| 04 | [Nodes](04_Nodes.md) | All 22 nodes, properties, runtime notes, and usage guidance |
+| 05 | [Presets](05_Presets.md) | All 13 presets and the preset capture/apply workflow |
+| 06 | [Runtime Usage](06_Runtime_Usage.md) | Runtime matrix, cooked references, determinism, packaging checklist |
+| 07 | [API Reference](07_API_Reference.md) | Runtime/editor modules, public classes, enums, settings, Build.cs |
+| 08 | [Troubleshooting](08_Troubleshooting.md) | Common v2 setup and runtime problems |
+| 09 | [Changelog](09_Changelog.md) | v2.0.0 release notes and historical releases |
 
 ---
 
 ## Quick answers
 
-| I want to… | Go to |
+| I need to… | Go to |
 |---|---|
-| Install the plugin | [01 — Installation](01_Installation.md) |
-| Spawn a ready-made PCG graph | [02 — Workflow · Template Library](02_Workflow.md#template-library) |
-| Tune node parameters without opening the graph | [02 — Workflow · Graph Inspector](02_Workflow.md#graph-inspector) |
-| See what each node does and what properties it has | [04 — Nodes](04_Nodes.md) |
-| Save and reapply a parameter configuration | [05 — Presets](05_Presets.md) |
-| Make the plugin work in a packaged game | [06 — Runtime Usage](06_Runtime_Usage.md) |
-| Upgrade from v1.0 | [01 — Installation · Upgrading from v1.0](01_Installation.md#upgrading-from-v10) |
-| Fix a broken node from v1.0 (SurfaceSlopeFilter) | [08 — Troubleshooting · 8.3](08_Troubleshooting.md#83--pcg-pro-slope-filter-node-is-missing--broken-graph-from-v10) |
-| Fix spline nodes producing no output | [08 — Troubleshooting · 8.4](08_Troubleshooting.md#84--spline-nodes-produce-no-output-in-cookedasync-builds) |
-| Understand what changed in v1.1 | [09 — Changelog](09_Changelog.md) |
+| Install or upgrade to v2.0.0 | [01 — Installation](01_Installation.md) |
+| Add a ready-to-use graph | [02 — Template Library](02_Workflow.md#template-library) |
+| Create an editable project copy | [02 — Create Editable Copy](02_Workflow.md#create-editable-copy) |
+| Tune a selected PCG actor | [02 — Graph Inspector](02_Workflow.md#graph-inspector) |
+| Change or lock the PCG component seed | [02 — Seed Controls](02_Workflow.md#seed-controls) |
+| Validate required tags and actors | [02 — Setup Validator](02_Workflow.md#setup-validator) |
+| Understand a template | [03 — Templates](03_Templates.md) |
+| Understand a node or property | [04 — Nodes](04_Nodes.md) |
+| Apply or save presets | [05 — Presets](05_Presets.md) |
+| Package a runtime PCG workflow | [06 — Runtime Usage](06_Runtime_Usage.md) |
 | Use the C++ API | [07 — API Reference](07_API_Reference.md) |
+| Diagnose a problem | [08 — Troubleshooting](08_Troubleshooting.md) |
+| Review v2.0.0 changes | [09 — Changelog](09_Changelog.md) |
 
 ---
 
-## Node categories at a glance
+## Node categories
 
 | Category | Nodes |
 |---|---|
-| Filter | Blue Noise Scatter, Height Filter, Landscape Layer Sampler, Noise Mask Filter, Slope Filter, Spline Avoidance, Water Body Avoidance, Weighted Selection By Tag |
-| Spatial | Align To Nearest Spline, Grid Snap, Project To Landscape, Relax Points |
-| Sampler | Clump Scatter |
-| Metadata | Boundary Detect, Distance To Nearest Tag |
-| Density | Density Falloff |
-| Debug | Print Stats |
+| Scatter | Blue Noise Scatter, Clump Scatter, Grid Snap |
+| Spatial | Spline Offset, Align To Nearest Spline |
+| Landscape | Landscape Layer Sampler, Project To Landscape |
+| Utility | Print Stats |
+| Filter | Instance Variation, Distance LOD, Random Subset, Biome Mask, Spline Avoidance, Water Body Avoidance, Boundary Detect, Curvature Filter, Density Falloff, Distance To Nearest Tag, Height Filter, Noise Mask Filter, Relax Points, Weighted Selection By Tag |
+
+> Categories above match the node palette classification in v2.0.0. Template Library categories are assigned separately from template asset names.
 
 ---
+
+## Version compatibility
+
+| Plugin version | Engine |
+|---|---|
+| PCG Pro Tools 2.0.0 | Unreal Engine 5.8 |
+| PCG Pro Tools 1.1.1 | Unreal Engine 5.7 |
 
 Support: [discord.gg/vgpmnN6nCR](https://discord.gg/vgpmnN6nCR) · [GitHub Issues](https://github.com/eXeViruZ/PCGProTools/issues)

@@ -1,155 +1,168 @@
 <!-- Copyright (c) 2026 Tom Leon Vincent Hanke -->
-<!-- This file is the GitHub repository README. Place at repo root, NOT in Docs/. -->
 
 # PCG Pro Tools
 
-Production-ready toolkit of custom PCG nodes, editor tools, templates, and presets for Unreal Engine 5.7.
+Production-ready custom PCG nodes, editor tools, graph templates, presets, and demo workflows for **Unreal Engine 5.8**.
 
-## What it is
+PCG Pro Tools v2.0.0 extends Unreal Engine's built-in Procedural Content Generation Framework with:
 
-PCG Pro Tools extends Unreal Engine's built-in Procedural Content Generation Framework with **17 custom C++ nodes**, a full **editor toolbar** (Debug Overlay · Template Library · Graph Inspector), **17 graph templates**, **4 presets**, and **15 demo maps** — tuned for real production use on landscapes, splines, water bodies, and grid-based layouts.
+- **22 custom C++ PCG nodes**
+- **23 ready-to-use graph templates**
+- **13 presets**
+- **21 demo maps**
+- Graph Inspector, Template Library, Setup Validator, and Debug Overlay tooling
 
-No engine modifications required.
+No engine modifications are required.
 
 ---
 
-## What you get
+## What's new in v2.0.0
 
-### 17 Custom PCG Nodes
+### Five new custom PCG nodes
 
-| Node | Category | Purpose |
-|---|---|---|
-| Blue Noise Scatter | Filter | Poisson-disk thinning for even, organic point distribution |
-| Boundary Detect | Metadata | Marks edge points of a point cloud as `bIsBoundary` |
-| Clump Scatter | Sampler | Expands each point into a natural-looking group of child points |
-| Relax Points | Spatial | Lloyd-relaxation for evenly spaced, non-clustered distributions |
-| Slope Filter | Filter | Filters by terrain slope angle (reads surface normal from Transform Z) |
-| Noise Mask Filter | Filter | Perlin-noise mask — creates organic clearings and density variation |
-| Density Falloff | Density | Fades point density radially (Linear / Exponential / Curve) |
-| Height Filter | Filter | Filters by world-space Z, optionally relative to a Landscape |
-| Grid Snap | Spatial | Snaps points to a world-space grid, optional 90° yaw snap |
-| Spline Avoidance | Filter | Removes/attenuates points near spline actors; supports invert mode |
-| Align To Nearest Spline | Spatial | Rotates each point toward the tangent of the nearest spline |
-| Water Body Avoidance | Filter | Removes/attenuates points near UE Water body splines |
-| Distance To Nearest Tag | Metadata | Writes nearest-point distance to a float attribute |
-| Weighted Selection By Tag | Filter | Samples from multiple tagged datasets by relative weight |
-| Print Stats | Debug | Passthrough node that logs point count, bounds, Z range, and density |
-| Project To Landscape | Spatial | Projects points onto a Landscape surface with optional normal align |
-| Landscape Layer Sampler | Filter | Filters/modulates points based on a Landscape paint-layer weight |
+- **Instance Variation** — randomized scale, rotation, and point color
+- **Spline Offset** — lateral point placement around spline-sampled directions
+- **Distance LOD** — distance-based point-density reduction
+- **Random Subset** — deterministic percentage-based point selection
+- **Biome Mask** — radial density shaping with transition-boundary detection
 
-### Editor Tools
+### Six new templates
 
-| Tool | Toolbar Button | Description |
-|---|---|---|
-| Debug Overlay | 🔲 | Draws bounds boxes around PCG actors in the viewport |
-| Template Library | 📋 | Browse and spawn pre-built PCG graph templates into the level |
-| Graph Inspector | 🔍 | Inspect and tweak all `PCG_Overridable` node parameters of the selected PCG actor |
+- `PCGT_InstanceVariation`
+- `PCGT_SplineOffset`
+- `PCGT_DistanceLOD`
+- `PCGT_RandomSubset`
+- `PCGT_BiomeMask`
+- `PCGT_RoadsideGenerator`
 
-### 17 Graph Templates
+### Editor workflow improvements
 
-Biome Transition · Boundary Detect · Clump Scatter · Curvature Filter · Distance Tag ·
-Forest Setup · Grid Snap · Hillside Vegetation · Landscape Layer Sampler · Natural Forest Scatter ·
-Noise Mask Filter · Print Stats · Relax Points · Spline Avoidance · Spline Road ·
-Water Body Avoidance · Weighted Selection
+- Previous, next, randomize, direct-entry, and lockable component seed controls
+- Point-count display in the Graph Inspector
+- Direct editing and per-property reset for all supported `PCG_Overridable` properties
+- Setup Validator for tags, Landscapes, Water Bodies, and supported workflow requirements
+- Template search and category filters
+- **Create Editable Copy** into `/Game/PCG/`
+- Improved Add to Level setup
+- Node Type Debug Filter with persistent configuration
+- More reliable regeneration after Undo, Redo, and Reset
 
-### 4 Presets
-
-Beach Sparse · Forest Dense · Mountain Rocky · Urban Grid
-
-### 15 Demo Maps
-
-One map per node — open, select the PCGVolume, press **Generate**.
-
-`Demo_BiomeTransition` · `Demo_BoundaryDetect` · `Demo_ClumpScatter` · `Demo_CurvatureFilter` ·
-`Demo_DistanceTag` · `Demo_ForestSetup` · `Demo_GridSnap` · `Demo_HillsideVegetation` ·
-`Demo_LandscapeLayerSampler` · `Demo_NoiseMaskFilter` · `Demo_RelaxPoints` ·
-`Demo_SplineAvoidance` · `Demo_SplineRoad` · `Demo_WaterBodyAvoidance` · `Demo_WeightedSelection`
+See the complete [v2.0.0 changelog](PCGProTools_Docs/09_Changelog.md).
 
 ---
 
 ## Requirements
 
-- Unreal Engine **5.7** (tested on 5.7.4)
-- Built-in **Procedural Content Generation Framework** plugin enabled
-- Platforms: **Win64** (validated), Linux, Mac (code-compatible)
+| Requirement | Value |
+|---|---|
+| Unreal Engine | **5.8** |
+| Required plugin | Built-in **PCG** plugin |
+| Supported target platforms | Win64, Linux, Mac |
+| Hard Water-plugin dependency | None |
+
+> PCG Pro Tools v2.0.0 is built for UE 5.8. The previous v1.1.1 build remains the UE 5.7-compatible release.
 
 ---
 
-## Quickstart
+## Quick start
 
-1. Copy `PCGProKit/` into `<YourProject>/Plugins/PCGProKit/` (or install from Fab).
-2. Open your project → **Edit → Plugins** → enable **PCG Pro Tools** → restart the editor.
-3. In the Content Browser enable **Show Plugin Content**.
-4. Open `Plugins/PCGProKit Content/Maps/Demo_BoundaryDetect`.
-5. Select the **PCGVolume** → press **Generate** on the PCGComponent.
+1. Install PCG Pro Tools from Fab, or copy `PCGProKit/` into `<YourProject>/Plugins/PCGProKit/`.
+2. Enable **PCG Pro Tools** and the built-in **Procedural Content Generation Framework** plugin.
+3. Restart Unreal Editor.
+4. Enable **Show Plugin Content** in the Content Browser.
+5. Open the **Template Library**, choose a template, and select **Add to Level**.
+6. Select the generated PCG actor and open the **Graph Inspector** to tune parameters.
 
-Full install + workflow: [`Docs/01_Installation.md`](Docs/01_Installation.md) and [`Docs/02_Workflow.md`](Docs/02_Workflow.md).
+Full setup instructions: [Installation](PCGProTools_Docs/01_Installation.md) and [Workflow](PCGProTools_Docs/02_Workflow.md).
+
+---
+
+## Editor tools
+
+| Tool | Purpose |
+|---|---|
+| **Graph Inspector** | Edit exposed graph parameters and supported node properties, apply presets, control the component seed, validate setup, regenerate, and inspect point count |
+| **Template Library** | Search, filter, add, and copy the 23 included templates |
+| **Debug Overlay** | Draw PCG bounds and reduce viewport clutter with a persistent node-type filter |
+| **Actor context menu** | Open a selected PCG actor directly in the Graph Inspector |
+
+---
+
+## Content overview
+
+| Category | v1.1.1 | v2.0.0 |
+|---|---:|---:|
+| Custom PCG nodes | 17 | **22** |
+| Graph templates | 17 | **23** |
+| Presets | 4 | **13** |
+| Demo maps | 15 | **21** |
+
+PCG Pro Tools does **not** include a separate Hanke Unreal Tools environment-art pack. The templates and demo maps use example meshes and materials provided by Unreal Engine's built-in PCG plugin and Engine Content for visualization. These references can be replaced with assets from your own project.
+
+The Landscape Layer Sampler demo also includes its required `LI_Grass` Landscape Layer Info asset inside PCG Pro Tools plugin content.
 
 ---
 
 ## Documentation
 
-Full docs live in `Docs/`:
-
 | # | Document |
 |---|---|
-| 01 | [Installation](Docs/01_Installation.md) |
-| 02 | [Workflow](Docs/02_Workflow.md) |
-| 03 | [Templates](Docs/03_Templates.md) |
-| 04 | [Nodes](Docs/04_Nodes.md) |
-| 05 | [Presets](Docs/05_Presets.md) |
-| 06 | [Runtime Usage](Docs/06_Runtime_Usage.md) |
-| 07 | [API Reference](Docs/07_API_Reference.md) |
-| 08 | [Troubleshooting](Docs/08_Troubleshooting.md) |
-| 09 | [Changelog](Docs/09_Changelog.md) |
-
-Start here: [`Docs/INDEX.md`](Docs/INDEX.md)
+| — | [Documentation Index](PCGProTools_Docs/INDEX.md) |
+| 01 | [Installation](PCGProTools_Docs/01_Installation.md) |
+| 02 | [Workflow](PCGProTools_Docs/02_Workflow.md) |
+| 03 | [Templates](PCGProTools_Docs/03_Templates.md) |
+| 04 | [Nodes](PCGProTools_Docs/04_Nodes.md) |
+| 05 | [Presets](PCGProTools_Docs/05_Presets.md) |
+| 06 | [Runtime Usage](PCGProTools_Docs/06_Runtime_Usage.md) |
+| 07 | [API Reference](PCGProTools_Docs/07_API_Reference.md) |
+| 08 | [Troubleshooting](PCGProTools_Docs/08_Troubleshooting.md) |
+| 09 | [Changelog](PCGProTools_Docs/09_Changelog.md) |
 
 ---
 
-## Must-read rules (TL;DR)
+## Important usage rules
 
-- **Runtime needs explicit references.** Set `LandscapeRef` / `SplineActors` / `WaterBodyActors` explicitly in cooked builds. Editor auto-discovery is editor-only.
- - **`PCGT_SplineRoad`** requires the spline actor to have the Actor Tag `Road`.
- - **Spline nodes in async PCG execution** — always assign `SplineActorTag` or populate `SplineActors` explicitly. The world-scan fallback only works in synchronous mode.
- - **`Landscape Layer Sampler`** — `LayerName` must match the Layer Name on the `ULandscapeLayerInfoObject` asset exactly.
- - **Don't edit plugin-content assets in place.** Duplicate templates/presets into your project content before customising.
- - **`SurfaceSlopeFilter` was renamed to `Slope Filter`** in v1.1. Graphs from v1.0 using the old node must be updated.
- - **Renamed templates/maps in v1.1:** `PCGT_VillageCorner` → `PCGT_ForestSetup`, `DemoVillageCorner` → `Demo_ForestSetup`, `PCGT_GridBuildings` → `PCGT_GridSnap`. Update any level or graph references accordingly.
-
-Details: [`Docs/08_Troubleshooting.md`](Docs/08_Troubleshooting.md)
+- **Landscape Layer Sampler is editor-only.** In non-editor builds it passes all input points through unchanged.
+- For cooked spline workflows, prefer `SplineActorTag`. Direct `SplineActors` soft references work only when the referenced actor is included in the package and loaded.
+- Assign `LandscapeRef` explicitly for cooked Height Filter and Project To Landscape workflows.
+- The Water plugin is optional, but Water Body Avoidance requires it to find `AWaterBody` actors.
+- **Distance LOD and Biome Mask change point density; they do not delete points.** Use downstream density-aware filtering or spawning.
+- Seed Lock is Graph Inspector widget state and is not persistent across editor restarts.
+- Do not edit shipped templates or presets in plugin content. Use **Create Editable Copy** or duplicate them into project content.
 
 ---
 
 ## Repository layout
 
-```
+```text
 PCGProKit/
   PCGProKit.uplugin
   Source/
-    PCGProKit/            # Runtime module (17 custom nodes, settings, preset system)
-    PCGProKitEditor/      # Editor module (toolbar, debug overlay, template library, graph inspector)
+    PCGProKit/            # Runtime module: 22 custom nodes, settings, preset system
+    PCGProKitEditor/      # Editor module: toolbar, inspector, templates, overlay
   Content/
-    Maps/                 # 15 demo maps
-    Templates/            # 17 PCGT_* graph assets
-    Presets/              # 4 preset data assets
-  Docs/                   # Full documentation
-  README.md
+    Maps/                 # 21 demo maps
+    Templates/            # 23 PCGT_* graph assets
+    Presets/              # 13 preset assets
+
+PCGProTools_Docs/         # Public documentation
+README.md
 ```
 
 ---
 
 ## Support
 
-Issues and feedback: open an issue on this repository, or join the Discord: [discord.gg/vgpmnN6nCR](https://discord.gg/vgpmnN6nCR)
+Open a GitHub issue or join the Discord: [discord.gg/vgpmnN6nCR](https://discord.gg/vgpmnN6nCR)
 
-When reporting a bug please include:
-- Engine version (5.7.x)
+Include:
+
+- Unreal Engine version
 - PCG Pro Tools version
-- Which demo map or template reproduces the issue
-- PCGVolume config + editor `.log`
-
-Full checklist: [`Docs/08_Troubleshooting.md`](Docs/08_Troubleshooting.md)
+- Reproducing template or demo map
+- Relevant PCG actor and graph setup
+- `LogPCGProKit` output
+- Minimal reproduction steps
 
 ---
 

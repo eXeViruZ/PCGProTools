@@ -1,344 +1,534 @@
 # 04 — Nodes
 
-PCG Pro Tools v1.1 ships **17 custom C++ nodes**. All nodes appear in the PCG Graph node palette under the **PCG Pro:** prefix. All overridable properties are marked `PCG_Overridable` and can be exposed to a Graph Instance.
+PCG Pro Tools v2.0.0 includes **22 custom C++ PCG nodes** for Unreal Engine 5.8.
+
+All nodes appear under the **PCG Pro:** prefix. Supported node properties marked `PCG_Overridable` can be edited in the Graph Inspector and captured by the preset system.
 
 ---
 
 ## Quick reference
 
-| Node | Class | Category | Seed |
-|---|---|---|---|
-| Blue Noise Scatter | `UPCGBlueNoiseScatterSettings` | Filter | yes |
-| Boundary Detect | `UPCGBoundaryDetectSettings` | Metadata | no |
-| Clump Scatter | `UPCGClumpScatterSettings` | Sampler | yes (per-clump) |
-| Density Falloff | `UPCGDensityFalloffSettings` | Density | no |
-| Distance To Nearest Tag | `UPCGDistanceToNearestTagSettings` | Metadata | no |
-| Grid Snap | `UPCGGridSnapSettings` | Spatial | no |
-| Height Filter | `UPCGHeightFilterSettings` | Filter | no |
-| Landscape Layer Sampler | `UPCGLandscapeLayerSamplerSettings` | Filter | no |
-| Noise Mask Filter | `UPCGNoiseMaskFilterSettings` | Filter | no |
-| Print Stats | `UPCGPrintStatsSettings` | Debug | no |
-| Project To Landscape | `UPCGProjectToLandscapeSettings` | Spatial | no |
-| Relax Points | `UPCGRelaxPointsSettings` | Spatial | no |
-| Slope Filter | `UPCGCurvatureFilterSettings` | Filter | no |
-| Spline Avoidance | `UPCGSplineAvoidanceSettings` | Filter | no |
-| Align To Nearest Spline | `UPCGAlignToNearestSplineSettings` | Spatial | no |
-| Water Body Avoidance | `UPCGWaterBodyAvoidanceSettings` | Filter | no |
-| Weighted Selection By Tag | `UPCGWeightedSelectionByTagSettings` | Filter | yes |
+| Node | Settings class | Category | Pins | Runtime | Seed |
+|---|---|---|---|---|---|
+| Instance Variation | `UPCGInstanceVariationSettings` | Filter | Points → Points | Full | Yes |
+| Spline Offset | `UPCGSplineOffsetSettings` | Spatial | Points → Points | Full | Yes |
+| Distance LOD | `UPCGDistanceLODSettings` | Filter | Points → Points | Full | No |
+| Random Subset | `UPCGRandomSubsetSettings` | Filter | Points → Points | Full | Yes |
+| Biome Mask | `UPCGBiomeMaskSettings` | Filter | Points → Points | Full | No |
+| Blue Noise Scatter | `UPCGBlueNoiseScatterSettings` | Scatter | Points → Points | Full | Yes |
+| Boundary Detect | `UPCGBoundaryDetectSettings` | Filter | Points → Points | Full | No |
+| Clump Scatter | `UPCGClumpScatterSettings` | Scatter | Points → Points | Full | Yes |
+| Density Falloff | `UPCGDensityFalloffSettings` | Filter | Points → Points | Full | No |
+| Distance To Nearest Tag | `UPCGDistanceToNearestTagSettings` | Filter | Points + Target → Points | Full | No |
+| Grid Snap | `UPCGGridSnapSettings` | Scatter | Points → Points | Full | No |
+| Height Filter | `UPCGHeightFilterSettings` | Filter | Points → Points | Full | No |
+| Landscape Layer Sampler | `UPCGLandscapeLayerSamplerSettings` | Landscape | Points → Points | Editor-only; cooked passthrough | No |
+| Noise Mask Filter | `UPCGNoiseMaskFilterSettings` | Filter | Points → Points | Full | Yes |
+| Print Stats | `UPCGPrintStatsSettings` | Utility | Points → Points | Passthrough outside editor logging | No |
+| Project To Landscape | `UPCGProjectToLandscapeSettings` | Landscape | Points → Points | Full | No |
+| Relax Points | `UPCGRelaxPointsSettings` | Filter | Points → Points | Full | No |
+| Curvature Filter | `UPCGCurvatureFilterSettings` | Filter | Points → Points | Full | No |
+| Spline Avoidance | `UPCGSplineAvoidanceSettings` | Filter | Points → Points | Full, main thread | No |
+| Align To Nearest Spline | `UPCGAlignToNearestSplineSettings` | Spatial | Points → Points | Full, main thread | No |
+| Water Body Avoidance | `UPCGWaterBodyAvoidanceSettings` | Filter | Points → Points | Full, main thread | No |
+| Weighted Selection By Tag | `UPCGWeightedSelectionByTagSettings` | Filter | Points → Points | Full | Yes |
 
 ---
 
-## Blue Noise Scatter
-**Display name:** PCG Pro: Blue Noise Scatter  
-**Class:** `UPCGBlueNoiseScatterSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+# New v2.0.0 nodes
 
-Poisson-disk thinning filter. Removes points that are closer than `MinDistance` to an already-kept point, using a 2D spatial hash grid (O(n)). The result is a well-distributed set with no tight clusters.
+## Instance Variation
+
+**Display name:** PCG Pro: Instance Variation  
+**Class:** `UPCGInstanceVariationSettings`  
+**Pins:** Points → Points  
+**Threading:** Async-capable
+
+Randomizes transform scale, rotation, and point color. Density is not changed.
+
+| Property | Type | Default | Range | Description |
+|---|---|---:|---:|---|
+| `bRandomizeScale` | bool | true | — | Enable scale variation |
+| `ScaleMin` | float | 0.8 | 0.01–10 | Minimum scale multiplier |
+| `ScaleMax` | float | 1.2 | 0.01–10 | Maximum scale multiplier |
+| `bIndependentAxes` | bool | false | — | Randomize X, Y, and Z independently |
+| `bRandomizeRotation` | bool | false | — | Enable rotation jitter |
+| `YawJitter` | float | 180 | 0–180° | Adds random ± yaw |
+| `PitchJitter` | float | 10 | 0–90° | Adds random ± pitch |
+| `RollJitter` | float | 180 | 0–180° | Adds random ± roll |
+| `bRandomizeColor` | bool | true | — | Enable HSV-derived color variation |
+| `ColorHueMin` | float | 0.0 | 0–1 | Minimum hue |
+| `ColorHueMax` | float | 0.1 | 0–1 | Maximum hue |
+| `ColorSaturationMin` | float | 0.7 | 0–1 | Minimum saturation |
+| `ColorSaturationMax` | float | 1.0 | 0–1 | Maximum saturation |
+| `ColorValueMin` | float | 0.7 | 0–1 | Minimum value |
+| `ColorValueMax` | float | 1.0 | 0–1 | Maximum value |
+| `DefaultTint` | FLinearColor | White | — | Default RGB tint |
+
+### Rotation behavior
+
+There is no separate Yaw Only switch. Configure yaw-only rotation with:
+
+```text
+YawJitter > 0
+PitchJitter = 0
+RollJitter = 0
+```
+
+### Point color and material setup
+
+The node writes RGBA into the PCG point Color range:
+
+```text
+R, G, B, A
+```
+
+Alpha is `1.0`.
+
+It does not create a metadata attribute and does not directly write `PerInstanceCustomData`.
+
+To transfer point color to spawned instances:
+
+1. Enable `bApplyColorAsPerInstanceCustomData` in the Static Mesh Spawner.
+2. In the material, read **Per Instance Custom Data** indices:
+   - 0 = R
+   - 1 = G
+   - 2 = B
+3. Combine the values and multiply them with the material Base Color.
+
+The workflow is compatible with ISM/HISM spawning when the spawner and material are configured to consume the data.
+
+---
+
+## Spline Offset
+
+**Display name:** PCG Pro: Spline Offset  
+**Class:** `UPCGSplineOffsetSettings`  
+**Enum:** `EPCGSplineOffsetSideMode` (`Both`, `LeftOnly`, `RightOnly`)  
+**Pins:** Points → Points  
+**Threading:** Async-capable
+
+Moves existing input points laterally using the point forward direction produced by a spline sampling workflow. It does not create additional points.
+
+| Property | Type | Default | Range | Description |
+|---|---|---:|---:|---|
+| `ScatterWidth` | float | 2000 cm | 10–100000 | Full width used in Both mode |
+| `CenterDensity` | float | 1.0 | 0–1 | Density at the spline center |
+| `EdgeDensity` | float | 0.2 | 0–1 | Density at the selected side's outer edge |
+| `bOffsetPerpendicular` | bool | true | — | Offset perpendicular to point forward |
+| `bRandomizeOffset` | bool | true | — | Randomize lateral offset |
+| `SideMode` | enum | Both | — | Both, Left Only, or Right Only |
+| `LeftWidth` | float | 1000 cm | 10–100000 | Width used by Left Only |
+| `RightWidth` | float | 1000 cm | 10–100000 | Width used by Right Only |
+
+### Width behavior
+
+| Side mode | Width used | Offset range |
+|---|---|---|
+| Both | `ScatterWidth` | `-ScatterWidth/2` to `+ScatterWidth/2` |
+| Left Only | `LeftWidth` | `-LeftWidth` to `0` |
+| Right Only | `RightWidth` | `0` to `RightWidth` |
+
+`ScatterWidth` remains active and is not deprecated.
+
+Visibility conditions:
+
+- `ScatterWidth` is always visible.
+- `LeftWidth` is hidden only in Right Only mode.
+- `RightWidth` is hidden only in Left Only mode.
+
+Density is interpolated from center to edge:
+
+```text
+Lerp(CenterDensity, EdgeDensity, Abs(Offset) / MaxOffsetForSelectedMode)
+```
+
+---
+
+## Distance LOD
+
+**Display name:** PCG Pro: Distance LOD  
+**Class:** `UPCGDistanceLODSettings`  
+**Pins:** Points → Points  
+**Threading:** Async-capable
+
+Reduces point density based on distance from `FixedLocation`.
+
+| Property | Type | Default | Range |
+|---|---|---:|---:|
+| `NearDistance` | float | 5000 cm | 100–1000000 |
+| `FarDistance` | float | 50000 cm | 100–1000000 |
+| `FarDensity` | float | 0.1 | 0–1 |
+| `FixedLocation` | FVector | (0,0,0) | — |
+
+Behavior:
+
+- Before Near Distance: Density unchanged
+- Near to Far: Linear interpolation toward Far Density
+- Beyond Far Distance: Density equals Far Density
+
+The node does not remove points. Even Density `0` remains in the dataset until a downstream filter or density-aware spawner culls it.
+
+---
+
+## Random Subset
+
+**Display name:** PCG Pro: Random Subset  
+**Class:** `UPCGRandomSubsetSettings`  
+**Pins:** Points → Points  
+**Threading:** Async-capable
+
+Keeps a deterministic percentage of each input point dataset.
+
+| Property | Type | Default | Range |
+|---|---|---:|---:|
+| `KeepPercentage` | float | 50 | 0–100 |
+| `bScaleDensity` | bool | false | — |
+
+There is no fixed-count mode.
+
+When `bScaleDensity` is enabled, surviving point density is multiplied by:
+
+```text
+KeepPercentage / 100
+```
+
+Multiple input datasets are processed independently.
+
+---
+
+## Biome Mask
+
+**Display name:** PCG Pro: Biome Mask  
+**Class:** `UPCGBiomeMaskSettings`  
+**Enum:** `EPCGDensityFalloffMode` (`Linear`, `SmoothStep`, `Inverse`)  
+**Pins:** Points → Points  
+**Threading:** Async-capable
+
+Modifies point density based on distance from the PCG volume center. It supports three falloff modes and optional neighborhood-based boundary detection for transition zones.
+
+The node has no actor, shape, or external biome-region input. It does not delete points.
+
+| Property | Type | Default | Range |
+|---|---|---:|---:|
+| `FalloffMode` | enum | Linear | — |
+| `FalloffRadius` | float | 10000 cm | 100–500000 |
+| `bCenterRelativeToVolume` | bool | true | — |
+| `BoundaryNeighborRadius` | float | 200 cm | 10–5000 |
+| `BoundaryMinNeighborCount` | int32 | 3 | 1–16 |
+| `TransitionLowerBound` | float | 0.3 | 0–1 |
+| `TransitionUpperBound` | float | 1.0 | 0–1 |
+| `bNormalizeDensity` | bool | false | — |
+
+`Inverse` reverses falloff direction: center density trends toward 0 while the outer region trends toward 1.
+
+Boundary detection classifies transition regions from local neighbor counts. Use downstream Density Filters or separate spawners to convert the resulting density bands into visible biome borders.
+
+Compared with Density Falloff, Biome Mask combines radial shaping with transition-boundary classification.
+
+---
+
+# Existing nodes
+
+The 17 v1.1.1 node classes retain their property names, types, defaults, clamps, and pins in v2.0.0.
+
+## Blue Noise Scatter
+
+**Class:** `UPCGBlueNoiseScatterSettings`  
+**Pins:** Points → Points
+
+Poisson-disk thinning for evenly spaced point distributions.
 
 | Property | Type | Default | Description |
-|---|---|---|---|
-| `MinDistance` | float (cm) | 100 | Minimum distance between any two kept points |
-| `MaxAttempts` | int [1–100] | 30 | Bridson rejection attempts per point. Higher = denser packing |
-| `MaxPoints` | int [1–1 000 000] | 100 000 | Hard output cap. Prevents runaway output on large inputs |
-
-**Tip:** Pipe this into Relax Points for an even higher-quality distribution.
+|---|---|---:|---|
+| `MinDistance` | float | 100 cm | Minimum distance between kept points |
+| `MaxAttempts` | int32 | 30 | Rejection attempts |
+| `MaxPoints` | int32 | 100000 | Hard output cap |
 
 ---
 
 ## Boundary Detect
-**Display name:** PCG Pro: Boundary Detect  
+
 **Class:** `UPCGBoundaryDetectSettings`  
-**Category:** Metadata  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Marks each point as a boundary or interior point. A point is a boundary if it has fewer than `MinNeighborCount` neighbors within `NeighborRadius`. Uses a spatial octree (O(n log n)). Result is written as a bool attribute.
+Writes a bool boundary attribute based on local neighbor count.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `NeighborRadius` | float (cm) | 200 | Search radius for neighbor counting |
-| `MinNeighborCount` | int ≥ 1 | 3 | Points with fewer neighbors than this are marked as boundary |
-| `OutputAttributeName` | FName | `bIsBoundary` | Name of the output bool attribute |
-
-**Tip:** Filter downstream on `bIsBoundary == true` to place fence posts, border stones, or edge-specific assets.
+| Property | Type | Default |
+|---|---|---:|
+| `NeighborRadius` | float | 200 cm |
+| `MinNeighborCount` | int32 | 3 |
+| `OutputAttributeName` | FName | `bIsBoundary` |
 
 ---
 
 ## Clump Scatter
-**Display name:** PCG Pro: Clump Scatter  
+
 **Class:** `UPCGClumpScatterSettings`  
-**Category:** Sampler  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Converts each input point into a natural-looking clump of child points. Each input point becomes a clump center; `ClumpSize` child points are scattered within `ClumpRadius` using uniform disk sampling. Each clump uses a deterministic seed derived from the graph seed + point index.
+Expands each input point into a deterministic local cluster.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `ClumpSize` | int [1–64] | 6 | Number of child points per input point |
-| `ClumpRadius` | float (cm) | 200 | Maximum distance from clump center |
-| `bScaleFalloff` | bool | true | Scale child points down near the clump edge |
-| `MinEdgeScale` | float [0–1] | 0.4 | Scale multiplier at the clump edge when `bScaleFalloff` is on |
-| `bKeepSourcePoint` | bool | false | Include the original input (center) point in the output |
-
-**Use case:** turn a sparse Blue Noise scatter into organic tree clusters, rock formations, or flower patches.
+| Property | Type | Default |
+|---|---|---:|
+| `ClumpSize` | int32 | 6 |
+| `ClumpRadius` | float | 200 cm |
+| `bScaleFalloff` | bool | true |
+| `MinEdgeScale` | float | 0.4 |
+| `bKeepSourcePoint` | bool | false |
 
 ---
 
 ## Density Falloff
-**Display name:** PCG Pro: Density Falloff  
+
 **Class:** `UPCGDensityFalloffSettings`  
-**Category:** Density  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Multiplies each point's density by a falloff function based on its distance from a center point. Points beyond `Radius` are unchanged.
+Multiplies density by a radial falloff.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `bCenterRelativeToVolume` | bool | true | If true, `Center` is relative to the PCGVolume origin |
-| `Center` | FVector | (0,0,0) | Center of the falloff effect |
-| `Radius` | float (cm) | 1000 | Radius beyond which density is unchanged |
-| `FalloffMode` | enum | Linear | `Linear`, `Exponential`, or `Curve` |
-| `FalloffCurve` | FRuntimeFloatCurve | — | Custom curve (X = normalised distance [0,1], Y = density multiplier). Only active when `FalloffMode == Curve` |
+| Property | Type | Default |
+|---|---|---:|
+| `bCenterRelativeToVolume` | bool | true |
+| `Center` | FVector | (0,0,0) |
+| `Radius` | float | 1000 cm |
+| `FalloffMode` | enum | Linear |
+| `FalloffCurve` | FRuntimeFloatCurve | — |
 
 ---
 
 ## Distance To Nearest Tag
-**Display name:** PCG Pro: Distance To Nearest Tag  
+
 **Class:** `UPCGDistanceToNearestTagSettings`  
-**Category:** Metadata  
-**Pins:** Points In, Tagged Data In → Points Out
+**Pins:** Points + Target → Points
 
-For each input point, finds the nearest point in the tagged secondary dataset and writes the distance (cm) as a float attribute. Uses a secondary input pin for the reference dataset.
+Writes nearest target-point distance to a float attribute.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `SearchTarget` | enum | AllTagged | `AllTagged` — search all tagged inputs; `SpecificTag` — search only the dataset whose tag matches `TargetTag` |
-| `TargetTag` | FName | None | Tag to search (only when `SearchTarget == SpecificTag`) |
-| `OutputAttributeName` | FName | `NearestTagDistance` | Name of the output float attribute |
-| `MaxSearchDistance` | float (cm) | 0 | Points farther than this are ignored. 0 = no limit |
+| Property | Type | Default |
+|---|---|---:|
+| `SearchTarget` | enum | AllTagged |
+| `TargetTag` | FName | None |
+| `OutputAttributeName` | FName | `NearestTagDistance` |
+| `MaxSearchDistance` | float | 0 |
 
 ---
 
 ## Grid Snap
-**Display name:** PCG Pro: Grid Snap  
+
 **Class:** `UPCGGridSnapSettings`  
-**Category:** Spatial  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Snaps each point's position to the nearest cell of a world-space grid. Optionally snaps yaw rotation to the nearest 90° increment.
+Snaps position to a world grid and can snap yaw to 90-degree increments.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `GridSize` | float (cm) | 100 | Cell size. All axes use the same size |
-| `GridOrigin` | FVector | (0,0,0) | World-space origin of the grid |
-| `bSnapRotationToGrid` | bool | false | Snap yaw to nearest 90°. Pitch and roll are unchanged |
+| Property | Type | Default |
+|---|---|---:|
+| `GridSize` | float | 100 cm |
+| `GridOrigin` | FVector | (0,0,0) |
+| `bSnapRotationToGrid` | bool | false |
 
 ---
 
 ## Height Filter
-**Display name:** PCG Pro: Height Filter  
+
 **Class:** `UPCGHeightFilterSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Filters points by world-space Z height. Optionally treats `MinZ`/`MaxZ` as offsets from the Landscape surface at each XY position.
+Filters by world Z or height relative to a Landscape.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `MinZ` | float (cm) | -1 000 000 | Minimum world Z to keep |
-| `MaxZ` | float (cm) | 1 000 000 | Maximum world Z to keep |
-| `bUseLandscapeReference` | bool | false | If true, `MinZ`/`MaxZ` are added on top of the landscape height at each XY |
-| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None | The landscape to use as height reference |
+| Property | Type | Default |
+|---|---|---:|
+| `MinZ` | float | -1000000 cm |
+| `MaxZ` | float | 1000000 cm |
+| `bUseLandscapeReference` | bool | false |
+| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None |
 
-> **Cooked builds:** always assign `LandscapeRef` explicitly when `bUseLandscapeReference` is true.
+Assign `LandscapeRef` explicitly in cooked builds when landscape-relative mode is used.
 
 ---
 
 ## Landscape Layer Sampler
-**Display name:** PCG Pro: Landscape Layer Sampler  
+
 **Class:** `UPCGLandscapeLayerSamplerSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points  
+**Threading:** Main thread  
+**Runtime:** Editor-only processing
 
-Filters and modulates point density based on a Landscape paint-layer weight. Editor-only: in non-editor builds all points pass through unchanged.
+Filters and modulates density from a painted Landscape layer.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `LayerName` | FName | None | Exact name of the Landscape paint layer. Must match the `Layer Name` on the `ULandscapeLayerInfoObject` asset |
-| `MinWeight` | float [0–1] | 0.1 | Points with sampled weight below this are removed |
-| `bModulateDensity` | bool | true | Multiply surviving point density by the sampled weight |
-| `bInvertFilter` | bool | false | Keep only points with weight **below** `MinWeight` |
-| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None | Optional explicit landscape. Leave empty to auto-discover. Recommended for World Partition or multi-landscape levels |
+| Property | Type | Default |
+|---|---|---:|
+| `LayerName` | FName | None |
+| `MinWeight` | float | 0.1 |
+| `bModulateDensity` | bool | true |
+| `bInvertFilter` | bool | false |
+| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None |
 
-> **World Partition:** the node samples paint-layer weight across **all** landscape streaming proxies, so it works correctly on partitioned landscapes. If your level has more than one landscape, set `LandscapeRef` to disambiguate which one to sample.
+In non-editor builds, the node logs a warning and passes input data through unchanged.
 
-**Tip:** Use `bInvertFilter = true` to spawn rocks on non-grass areas.
+World Partition processing requires the relevant Landscape cells/proxies to be loaded.
 
 ---
 
 ## Noise Mask Filter
-**Display name:** PCG Pro: Noise Mask Filter  
+
 **Class:** `UPCGNoiseMaskFilterSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Samples 2D Perlin noise at each point's XY world position and removes points whose noise value falls below `Threshold`. Creates organic, non-uniform density variation.
+Uses 2D noise to remove or attenuate points.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `NoiseScale` | float | 0.003 | World-space frequency. Lower = larger blobs, higher = finer grain |
-| `Threshold` | float [0–1] | 0.5 | Points with noise below this are removed. 0.5 ≈ 50% survive |
-| `FalloffWidth` | float [0–0.5] | 0.1 | Soft band around the threshold. Points within this range get density scaled instead of removed |
-| `NoiseOffset` | FVector2D | (0,0) | World-space XY shift of the noise pattern |
-| `bInvertMask` | bool | false | Keep only points with noise **below** threshold |
+| Property | Type | Default |
+|---|---|---:|
+| `NoiseScale` | float | 0.003 |
+| `Threshold` | float | 0.5 |
+| `FalloffWidth` | float | 0.1 |
+| `NoiseOffset` | FVector2D | (0,0) |
+| `bInvertMask` | bool | false |
 
 ---
 
 ## Print Stats
-**Display name:** PCG Pro: Print Stats  
+
 **Class:** `UPCGPrintStatsSettings`  
-**Category:** Debug  
-**Pins:** Points In → Points Out (passthrough — input is never modified)
+**Pins:** Points → Points
 
-Logs point count, XY bounds, Z range, and density range to the Output Log. Zero effect on the output data.
+Passthrough debug node for point count, bounds, height, and density logging.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `bPrintEnabled` | bool | true | When false, the node is a silent passthrough |
-| `Label` | FString | `PCG Stats` | Prefix for the log line. Use unique labels when multiple nodes are in one graph |
-| `bLogPointCount` | bool | true | Log total point count |
-| `bLogBounds` | bool | true | Log XY bounding box |
-| `bLogZRange` | bool | true | Log min/max Z |
-| `bLogDensityRange` | bool | true | Log min/max density |
-
-**Workflow:** place between nodes, label each checkpoint, force-regen, read the Output Log. Disable all `bPrintEnabled` flags before shipping.
+| Property | Type | Default |
+|---|---|---:|
+| `bPrintEnabled` | bool | true |
+| `Label` | FString | `PCG Stats` |
+| `bLogPointCount` | bool | true |
+| `bLogBounds` | bool | true |
+| `bLogZRange` | bool | true |
+| `bLogDensityRange` | bool | true |
 
 ---
 
 ## Project To Landscape
-**Display name:** PCG Pro: Project To Landscape  
+
 **Class:** `UPCGProjectToLandscapeSettings`  
-**Category:** Spatial  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Projects each point vertically onto a Landscape surface. Optionally aligns the point's rotation to the surface normal (finite-difference approach).
+Projects points vertically to a Landscape.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None | The landscape to project onto |
-| `ZOffset` | float (cm) | 0 | Vertical offset added after projection (prevents z-fighting) |
-| `bProjectRotation` | bool | false | Align point rotation to the landscape surface normal |
+| Property | Type | Default |
+|---|---|---:|
+| `LandscapeRef` | `TSoftObjectPtr<ALandscapeProxy>` | None |
+| `ZOffset` | float | 0 cm |
+| `bProjectRotation` | bool | false |
 
-> **Cooked builds:** always assign `LandscapeRef` explicitly.
+Assign `LandscapeRef` explicitly in cooked builds.
 
 ---
 
 ## Relax Points
-**Display name:** PCG Pro: Relax Points  
+
 **Class:** `UPCGRelaxPointsSettings`  
-**Category:** Spatial  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Approximates Lloyd's algorithm: iteratively nudges each point toward the centroid of its neighbors within `SearchRadius`. After several iterations the result is a well-spaced, organic distribution.
+Iteratively moves points toward local-neighbor centroids.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `Iterations` | int [1–10] | 2 | Number of relaxation passes. 1–3 is usually sufficient |
-| `SearchRadius` | float (cm) | 300 | Neighbor lookup radius. ~1.5–2× desired minimum spacing |
-| `RelaxStrength` | float [0–1] | 0.5 | Blend factor toward neighbor centroid per iteration. 0 = no movement, 1 = full snap |
-
-**Performance:** O(N × AvgNeighbors × Iterations). Spatial grid avoids O(N²) brute force.
+| Property | Type | Default |
+|---|---|---:|
+| `Iterations` | int32 | 2 |
+| `SearchRadius` | float | 300 cm |
+| `RelaxStrength` | float | 0.5 |
 
 ---
 
-## Slope Filter
-**Display name:** PCG Pro: Slope Filter  
+## Curvature Filter
+
+**Display name:** PCG Pro: Curvature Filter  
 **Class:** `UPCGCurvatureFilterSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Filters points by terrain slope angle. Reads the surface normal from the point's Transform Z-axis (set correctly by the PCG Surface Sampler on a Landscape). Slope angle = angle between the surface normal and the world up vector.
+Filters by the angle between point surface normal and world up.
 
-> **v1.0 users:** this node was called `SurfaceSlopeFilter` in v1.0. The C++ class is `UPCGCurvatureFilterSettings`.
+| Property | Type | Default |
+|---|---|---:|
+| `MinAngle` | float | 0° |
+| `MaxAngle` | float | 30° |
+| `FalloffAngle` | float | 0° |
+| `bInvertFilter` | bool | false |
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `MinAngle` | float [0–90°] | 0 | Points with slope below this are removed |
-| `MaxAngle` | float [0–90°] | 30 | Points with slope above this are removed |
-| `FalloffAngle` | float [0–45°] | 0 | Soft density falloff band at both slope boundaries. 0 = hard cut |
-| `bInvertFilter` | bool | false | Keep only points **outside** [MinAngle, MaxAngle] |
-
-**Tip:** 0–25° = flat ground (trees), 50–90° = steep faces (cliff rocks), 30–60° = mid slopes (shrubs).
+The internal class, template, and public v2 node title use **Curvature Filter** naming. The older **Slope Filter** title is documented only in the historical changelog.
 
 ---
 
 ## Spline Avoidance
-**Display name:** PCG Pro: Spline Avoidance  
+
 **Class:** `UPCGSplineAvoidanceSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points  
+**Threading:** Main thread
 
-Removes or attenuates points that are within `AvoidanceRadius` of any spline on the specified actors. Soft falloff smoothly reduces density in the transition zone.
+Removes or attenuates points near splines.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `SplineActorTag` | FName | None | Actor Tag used to find spline actors automatically. Takes priority over `SplineActors`. Works in async execution |
-| `SplineActors` | `TArray<TSoftObjectPtr<AActor>>` | empty | Explicit spline actor references. Always set this in async execution |
-| `AvoidanceRadius` | float (cm) | 500 | Hard avoidance radius. Points closer than this are removed |
-| `FalloffRadius` | float (cm) | 0 | Soft zone beyond `AvoidanceRadius`. Points here get density scaled down. 0 = hard edge |
-| `bInvertSelection` | bool | false | Keep **only** points inside `AvoidanceRadius` (roadside/riverbank mode) |
+| Property | Type | Default |
+|---|---|---:|
+| `SplineActorTag` | FName | None |
+| `SplineActors` | array of soft actor references | Empty |
+| `AvoidanceRadius` | float | 500 cm |
+| `FalloffRadius` | float | 0 cm |
+| `bInvertSelection` | bool | false |
+
+For cooked builds, prefer `SplineActorTag`. Direct references require the actor to be packaged and loaded.
 
 ---
 
 ## Align To Nearest Spline
-**Display name:** PCG Pro: Align To Nearest Spline  
+
 **Class:** `UPCGAlignToNearestSplineSettings`  
-**Category:** Spatial  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points  
+**Threading:** Main thread
 
-Aligns each point's rotation toward the tangent of the nearest spline. Uses the engine SplineComponent API to find the closest point and tangent.
+Rotates each point to the tangent of the nearest configured spline.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `SplineActorTag` | FName | None | Actor Tag used to find spline actors automatically. Takes priority over `SplineActors` |
-| `SplineActors` | `TArray<TSoftObjectPtr<AActor>>` | empty | Explicit spline actor references. Always set in async execution |
-
-> **Important:** In async PCG execution (the default), always assign `SplineActorTag` or populate `SplineActors`. The auto-discovery world scan only works in synchronous mode.
+| Property | Type | Default |
+|---|---|---:|
+| `SplineActorTag` | FName | None |
+| `SplineActors` | array of soft actor references | Empty |
 
 ---
 
 ## Water Body Avoidance
-**Display name:** PCG Pro: Water Body Avoidance  
+
 **Class:** `UPCGWaterBodyAvoidanceSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points  
+**Threading:** Main thread
 
-Removes or attenuates points within `AvoidanceRadius` of any UE Water body spline. Works with all water body types: River, Lake, Ocean, Custom. No hard dependency on the Water plugin — discovered via reflection. If the Water plugin is not enabled, all points pass through unchanged.
+Removes or attenuates points around UE Water Body splines.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `WaterBodyActors` | `TArray<TSoftObjectPtr<AActor>>` | empty | Explicit water body actor references. Leave empty for auto-discovery (synchronous only) |
-| `AvoidanceRadius` | float (cm) | 500 | Hard avoidance radius |
-| `FalloffRadius` | float (cm) | 0 | Soft falloff zone beyond `AvoidanceRadius`. 0 = hard edge |
-| `bInvertSelection` | bool | false | Keep **only** points inside `AvoidanceRadius` (riverbank/lakeshore mode) |
+| Property | Type | Default |
+|---|---|---:|
+| `WaterBodyActors` | array of soft actor references | Empty |
+| `AvoidanceRadius` | float | 500 cm |
+| `FalloffRadius` | float | 0 cm |
+| `bInvertSelection` | bool | false |
+
+The plugin has no hard Water dependency. The node walks the class hierarchy and matches the base class name `WaterBody`, covering `AWaterBody` subclasses. Without the Water plugin, the node cannot find Water Body actors and passes points through.
 
 ---
 
 ## Weighted Selection By Tag
-**Display name:** PCG Pro: Weighted Selection By Tag  
+
 **Class:** `UPCGWeightedSelectionByTagSettings`  
-**Category:** Filter  
-**Pins:** Points In → Points Out
+**Pins:** Points → Points
 
-Selects `SelectionCount` points from multiple tagged input datasets by weighted random sampling. Data sets with no matching tag use weight 1.0.
+Selects points from tagged datasets with relative weights.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `TagWeights` | `TMap<FName, float>` | empty | Maps a tag name (from `FPCGTaggedData.Tags`) to its relative selection weight |
-| `SelectionCount` | int ≥ 1 | 100 | Total number of output points. Clamped to available input count |
+| Property | Type | Default |
+|---|---|---:|
+| `TagWeights` | `TMap<FName, float>` | Empty |
+| `SelectionCount` | int32 | 100 |
 
-**Example:** `TagWeights = { Oak: 3.0, Pine: 1.0 }` → oak appears ~75% of the time, pine ~25%.
+Example:
+
+```text
+Oak = 3.0
+Pine = 1.0
+```
+
+produces an approximate 75/25 relative selection.
 
 ---
 
-Next: [`05_Presets.md`](05_Presets.md)
+Next: [05 — Presets](05_Presets.md)

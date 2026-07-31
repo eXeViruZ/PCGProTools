@@ -1,28 +1,52 @@
 # 07 — API Reference
 
-This page covers the public C++ API of PCG Pro Tools v1.1 for teams integrating with the plugin from code.
+This page documents the public C++ integration surface of PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
 
 ---
 
-## Module structure
+## Modules
 
-| Module | Type | Description |
+| Module | Type | Purpose |
 |---|---|---|
-| `PCGProKit` | Runtime | Custom node settings classes, preset system, project settings |
-| `PCGProKitEditor` | Editor | Toolbar, debug overlay, template library, graph inspector widgets |
+| `PCGProKit` | Runtime | Custom node settings, preset assets, project settings, runtime helpers |
+| `PCGProKitEditor` | Editor | Toolbar, Graph Inspector, Template Library, Debug Overlay |
 
-Add `PCGProKit` to your `Build.cs` `PublicDependencyModuleNames` if you need to reference node settings classes at runtime. Never take a dependency on `PCGProKitEditor` from a runtime module.
+Never add a dependency on `PCGProKitEditor` from a runtime module.
 
 ---
 
-## Runtime module — PCGProKit
+## Runtime dependencies
 
-### Node settings classes
+`PCGProKit.Build.cs` uses:
 
-All node settings classes are in `Source/PCGProKit/Public/Nodes/`. Each inherits from `UPCGSettings`.
+```text
+Core
+CoreUObject
+Engine
+PCG
+DeveloperSettings
+Landscape
+```
 
-| Class | Header |
+The Water plugin is not a hard dependency.
+
+---
+
+## Node settings classes
+
+All settings headers are under:
+
+```text
+Source/PCGProKit/Public/Nodes/
+```
+
+| Settings class | Header |
 |---|---|
+| `UPCGInstanceVariationSettings` | `PCGInstanceVariationSettings.h` |
+| `UPCGSplineOffsetSettings` | `PCGSplineOffsetSettings.h` |
+| `UPCGDistanceLODSettings` | `PCGDistanceLODSettings.h` |
+| `UPCGRandomSubsetSettings` | `PCGRandomSubsetSettings.h` |
+| `UPCGBiomeMaskSettings` | `PCGBiomeMaskSettings.h` |
 | `UPCGBlueNoiseScatterSettings` | `PCGBlueNoiseScatterSettings.h` |
 | `UPCGBoundaryDetectSettings` | `PCGBoundaryDetectSettings.h` |
 | `UPCGClumpScatterSettings` | `PCGClumpScatterSettings.h` |
@@ -41,121 +65,88 @@ All node settings classes are in `Source/PCGProKit/Public/Nodes/`. Each inherits
 | `UPCGWaterBodyAvoidanceSettings` | `PCGWaterBodyAvoidanceSettings.h` |
 | `UPCGWeightedSelectionByTagSettings` | `PCGWeightedSelectionByTagSettings.h` |
 
+All settings classes derive from `UPCGSettings`.
+
 ---
 
-### Enums
+## v2 enums
 
-#### `EPCGFalloffMode` (`PCGDensityFalloffSettings.h`)
+### `EPCGSplineOffsetSideMode`
+
+Declared in `PCGSplineOffsetSettings.h`.
+
+```cpp
+UENUM(BlueprintType)
+enum class EPCGSplineOffsetSideMode : uint8
+{
+    Both,
+    LeftOnly,
+    RightOnly,
+};
+```
+
+### `EPCGDensityFalloffMode`
+
+Declared in `PCGBiomeMaskSettings.h`.
+
+```cpp
+UENUM(BlueprintType)
+enum class EPCGDensityFalloffMode : uint8
+{
+    Linear,
+    SmoothStep,
+    Inverse,
+};
+```
+
+---
+
+## Existing public enums
+
+### `EPCGFalloffMode`
+
+Declared in `PCGDensityFalloffSettings.h`.
 
 ```cpp
 UENUM(BlueprintType)
 enum class EPCGFalloffMode : uint8
 {
-    Linear,       // density *= 1.0 - (distance / Radius)
-    Exponential,  // density *= exp(-3.0 * distance / Radius)
-    Curve,        // density *= FalloffCurve.Eval(distance / Radius)
+    Linear,
+    Exponential,
+    Curve,
 };
 ```
 
-#### `EPCGSearchTarget` (`PCGDistanceToNearestTagSettings.h`)
+### `EPCGSearchTarget`
+
+Declared in `PCGDistanceToNearestTagSettings.h`.
 
 ```cpp
 UENUM(BlueprintType)
 enum class EPCGSearchTarget : uint8
 {
-    AllTagged,    // Search all tagged input datasets
-    SpecificTag,  // Search only the dataset whose tag matches TargetTag
+    AllTagged,
+    SpecificTag,
 };
 ```
 
-#### `EPCGDebugOverlayScope` (`PCGProKitSettings.h`)
+### `EPCGDebugOverlayScope`
+
+Declared in `PCGProKitSettings.h`.
 
 ```cpp
 UENUM()
 enum class EPCGDebugOverlayScope : uint8
 {
     SelectedOnly,
-    AllVisibleInViewport,
+    AllInActiveViewport,
     AllInLevel,
 };
 ```
 
----
+### `EPCGProKitPresetParamType`
 
-### `UPCGProKitSettings` (`PCGProKitSettings.h`)
-
-Project-level settings. Accessible via `UPCGProKitSettings::Get()` or `GetDefault<UPCGProKitSettings>()`.
-
-```cpp
-// Debug Overlay
-EPCGDebugOverlayScope OverlayScope;          // default: SelectedOnly
-float  OverlayViewportMaxDistance;           // default: 100000 cm
-int32  MaxPointsPerComponent;                // default: 5000
-bool   bShowLabelsOnlyForSelected;           // default: true
-float  AttributeLabelDrawDistance;           // default: 5000 cm
-
-// Performance Guards
-int32  DensityCapWarningThreshold;           // default: 1000000 (0 = off)
-
-// Determinism
-bool   bDeterministicMode;                   // default: false
-int32  DefaultRandomSeed;                    // default: 42
-```
-
-**Static helpers:**
-
-```cpp
-// Logs a warning if OutputPointCount > DensityCapWarningThreshold.
-// Returns true if the warning fired.
-static bool CheckDensityCap(int32 OutputPointCount, const FString& NodeDisplayName);
-
-// Sums all output point data in Context->OutputData and checks against threshold.
-static bool CheckDensityCapFromContext(FPCGContext* Context, const FString& NodeDisplayName);
-```
-
----
-
-### `UPCGProKitPresetAsset` (`PCGProKitPresetAsset.h`)
-
-Data asset storing a set of named property overrides.
-
-```cpp
-FName   PresetName;                          // Display name in the Graph Inspector dropdown
-FText   Description;                         // Tooltip in Graph Inspector
-TSoftObjectPtr<UPCGGraph> TargetGraph;       // Informational only; not enforced
-TArray<FPCGProKitPresetEntry> Overrides;     // Override list
-
-// Applies all overrides to the matching nodes on Component's graph.
-// Iterates Overrides[] and writes each entry via FProperty reflection.
-// Returns true on success.
-bool ApplyToComponent(UPCGComponent* Component) const;
-
-// Captures all PCG_Overridable properties from every node in Component's graph
-// into this asset's Overrides array.
-// Returns the number of overrides captured, or 0 on failure.
-int32 CaptureFromComponent(UPCGComponent* Component);
-```
-
----
-
-### `FPCGProKitPresetEntry` (`PCGProKitPresetEntry.h`)
-
-One override entry in a `UPCGProKitPresetAsset`.
-
-```cpp
-USTRUCT(BlueprintType)
-struct FPCGProKitPresetEntry
-{
-    TSoftClassPtr<UPCGSettings> NodeClass;   // Settings class to target
-    FName PropertyName;                      // Exact UPROPERTY name
-    EPCGProKitPresetParamType Type;          // Float / Int32 / Bool
-    float FloatValue;
-    int32 IntValue;
-    bool  BoolValue;
-};
-```
-
-#### `EPCGProKitPresetParamType`
+Declared in `PCGProKitPresetEntry.h`.
 
 ```cpp
 UENUM(BlueprintType)
@@ -167,48 +158,137 @@ enum class EPCGProKitPresetParamType : uint8
 };
 ```
 
+Enums used by presets are stored through Int32 entries.
+
 ---
 
-## Editor module — PCGProKitEditor
+## `UPCGProKitSettings`
 
-The editor module is loaded only in editor builds. Do not reference it from runtime code.
+`UPCGProKitSettings` derives from `UDeveloperSettings` and uses Editor config.
+
+Location:
+
+```text
+Project Settings → Plugins → PCG Pro Tools
+```
+
+Important properties:
+
+```cpp
+// Debug Overlay
+EPCGDebugOverlayScope OverlayScope;
+float OverlayViewportMaxDistance;
+int32 MaxPointsPerComponent;
+bool bShowLabelsOnlyForSelected;
+float AttributeLabelDrawDistance;
+
+// Node Type Filter
+bool bEnableNodeTypeFilter;
+TSet<FString> DebugNodeTypeFilter;
+
+// Performance
+int32 DensityCapWarningThreshold;
+
+// Determinism
+bool bDeterministicMode;
+int32 DefaultRandomSeed;
+```
+
+Defaults:
+
+| Property | Default |
+|---|---:|
+| `OverlayScope` | SelectedOnly |
+| `OverlayViewportMaxDistance` | 100000 cm |
+| `MaxPointsPerComponent` | 5000 |
+| `bShowLabelsOnlyForSelected` | true |
+| `AttributeLabelDrawDistance` | 5000 cm |
+| `bEnableNodeTypeFilter` | false |
+| `DensityCapWarningThreshold` | 1000000 |
+| `bDeterministicMode` | false |
+| `DefaultRandomSeed` | 42 |
+
+### Public static helpers
+
+```cpp
+static bool CheckDensityCap(
+    int32 OutputPointCount,
+    const FString& NodeDisplayName);
+
+static bool CheckDensityCapFromContext(
+    FPCGContext* Context,
+    const FString& NodeDisplayName);
+```
+
+`CheckDensityCap` reports when an output count exceeds `DensityCapWarningThreshold`. `CheckDensityCapFromContext` totals point outputs in the supplied PCG context before applying the same check.
+
+---
+
+## Preset API
+
+### `UPCGProKitPresetAsset`
+
+`UPCGProKitPresetAsset` derives from `UDataAsset`.
+
+```cpp
+FName PresetName;
+FText Description;
+TSoftObjectPtr<UPCGGraph> TargetGraph;
+TArray<FPCGProKitPresetEntry> Overrides;
+
+bool ApplyToComponent(UPCGComponent* Component) const;
+int32 CaptureFromComponent(UPCGComponent* Component);
+```
+
+- `TargetGraph` is informational and is not enforced.
+- `ApplyToComponent()` writes compatible overrides to matching settings classes.
+- `CaptureFromComponent()` captures supported `PCG_Overridable` properties.
+
+### `FPCGProKitPresetEntry`
+
+```cpp
+USTRUCT(BlueprintType)
+struct FPCGProKitPresetEntry
+{
+    TSoftClassPtr<UPCGSettings> NodeClass;
+    FName PropertyName;
+    EPCGProKitPresetParamType Type;
+    float FloatValue;
+    int32 IntValue;
+    bool BoolValue;
+};
+```
+
+---
+
+## Editor module
 
 ### `FPCGProKitEditorModule`
 
-Module entry point. Registers the toolbar, menus, debug overlay, and actor context menu extension.
+Registers toolbar commands, menu entries, tabs, the Debug Overlay, and the PCG actor context-menu extension.
 
 ### `FPCGProKitCommands`
 
-Three registered commands:
-
-| Command | Description |
+| Command | Purpose |
 |---|---|
-| `ToggleDebugOverlay` | Enables/disables the viewport debug overlay |
-| `OpenTemplateLibrary` | Opens the Template Library tab |
-| `OpenQuickTune` | Opens the Graph Inspector tab |
+| `ToggleDebugOverlay` | Toggle viewport overlay |
+| `OpenTemplateLibrary` | Open Template Library |
+| `OpenQuickTune` | Open Graph Inspector |
 
-### `FPCGProKitDebugOverlayTicker`
+### Editor widgets and tab IDs
 
-Tick-based overlay manager (~30 Hz). Maintains a cached set of live `UPCGComponent` weak pointers, updated via actor lifecycle delegates. Falls back to a full `TObjectIterator` rescan when the cache is empty.
-
-```cpp
-void Start();    // Start ticking, build cache, subscribe to actor delegates
-void Stop();     // Stop ticking, unsubscribe, clear cache
-bool IsRunning() const;
-```
-
-### Widgets
-
-| Class | Tab name | Description |
+| Widget | Tab ID | Purpose |
 |---|---|---|
-| `SPCGTemplateLibraryWidget` | `PCGProKit.TemplateLibrary` | Template browser and spawner |
-| `SPCGQuickTuneWidget` | `PCGProKit.QuickTune` | Graph Inspector (node param overview + preset controls) |
+| `SPCGTemplateLibraryWidget` | `PCGProKitTemplateLibrary` | Template search, categories, Add to Level, editable copy |
+| `SPCGQuickTuneWidget` | `PCGProKitQuickTune` | Graph Inspector, node parameters, presets, seeds, validation |
+
+Internal helper types such as `FPCGNodeParamRow` and the overlay ticker are implementation details, not stable public integration APIs.
 
 ---
 
-## Build.cs dependency
+## Build.cs usage
 
-To reference `PCGProKit` runtime types from your own module:
+To reference runtime types:
 
 ```csharp
 PublicDependencyModuleNames.AddRange(new string[]
@@ -218,7 +298,7 @@ PublicDependencyModuleNames.AddRange(new string[]
 });
 ```
 
-For editor-only tools that also need the editor module:
+For an editor-only module that intentionally uses PCG Pro Tools editor APIs:
 
 ```csharp
 if (Target.bBuildEditor)
@@ -227,6 +307,23 @@ if (Target.bBuildEditor)
 }
 ```
 
+Do not place `PCGProKitEditor` in runtime module dependencies.
+
 ---
 
-Next: [`08_Troubleshooting.md`](08_Troubleshooting.md)
+## Threading notes
+
+Main-thread nodes:
+
+- `UPCGSplineAvoidanceSettings`
+- `UPCGAlignToNearestSplineSettings`
+- `UPCGWaterBodyAvoidanceSettings`
+- `UPCGLandscapeLayerSamplerSettings`
+
+All other v2 settings classes are async-capable.
+
+Landscape Layer Sampler performs its actual layer sampling only inside editor builds.
+
+---
+
+Next: [08 — Troubleshooting](08_Troubleshooting.md)

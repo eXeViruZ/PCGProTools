@@ -1,122 +1,140 @@
 # 05 — Presets
 
-PCG Pro Tools v1.1 introduces a **DataAsset-based preset system** that lets you save, share, and reapply node parameter configurations across PCG graphs.
+PCG Pro Tools v2.0.0 includes **13 DataAsset-based presets**.
+
+A preset is a `UPCGProKitPresetAsset` containing property overrides targeted at PCG settings classes.
 
 ---
 
-## What a preset is
+## Preset behavior
 
-A preset is a `UPCGProKitPresetAsset` — a standard UE Data Asset that stores a list of property overrides. Each override targets one specific settings class (e.g. `UPCGBlueNoiseScatterSettings`) and one property on that class (e.g. `MinDistance`). When you apply a preset to a PCGComponent, the plugin iterates the graph's nodes, matches each node's settings class against the override's target class, and writes the value via UE property reflection.
+Each `FPCGProKitPresetEntry` stores:
 
-This means:
-- Presets work on **any graph** that contains the target node types.
-- New nodes added in future plugin versions require **no changes** to the preset system.
-- Presets are standard `.uasset` files — they can be added to source control, shared between team members, and duplicated like any other asset.
+- Target node settings class
+- Exact property name
+- Parameter type
+- Value
+
+Supported stored types:
+
+- Float
+- Int32
+- Bool
+- Enum values through Int32 storage
+
+Not captured:
+
+- Seed values
+- Vector, FName, Color, and String values unless represented by a supported stored entry type
+
+`TargetGraph` is informational. A preset can be applied to any graph containing compatible settings classes and properties.
+
+Incompatible overrides are skipped without aborting the rest of the preset.
 
 ---
 
 ## Included presets
 
-All four presets ship in `Plugins/PCGProKit Content/Presets/`.
-
-| Preset | Target use case | Key overrides |
-|---|---|---|
-| `Preset_BeachSparse` | Sandy coastal areas | Low MinDistance, sparse clumps |
-| `Preset_ForestDense` | Dense forest cover | High ClumpSize, tight MinDistance |
-| `Preset_MountainRocky` | Rocky hillside terrain | Steep slope filter range, large clump radius |
-| `Preset_UrbanGrid` | Grid-aligned urban props | GridSize snapped, rotation snap on |
-
-> **Important:** Do not edit plugin presets in place. Duplicate them into your project content before customising.
+| Preset asset | Target graph | Status | Purpose |
+|---|---|---|---|
+| `Preset_NaturalTrees` | `PCGT_InstanceVariation` | New | Scale 0.8–1.2, yaw variation, light color variation |
+| `Preset_WildVegetation` | `PCGT_InstanceVariation` | New | Scale 0.5–1.5, yaw and pitch variation |
+| `Preset_RoadBorderWide` | `PCGT_SplineOffset` | New | Wide Both-side spline placement, strong edge falloff |
+| `Preset_RoadBorderTight` | `PCGT_SplineOffset` | New | Narrow Both-side placement |
+| `Preset_LODNearOnly` | `PCGT_DistanceLOD` | New | Near 3000, far 10000, far density 0 |
+| `Preset_LODPerformance` | `PCGT_DistanceLOD` | New | Near 5000, far 50000, far density 0.1 |
+| `Preset_RoadsideHighway` | `PCGT_RoadsideGenerator` | New | Sparse left-side roadside placement with 8 m clearance |
+| `Preset_RoadsideAvenue` | `PCGT_RoadsideGenerator` | New | Dense Both-side roadside placement |
+| `Preset_RoadsideNatural` | `PCGT_RoadsideGenerator` | New | Narrower organic Both-side placement |
+| `Preset_BeachSparse` | `PCGT_ForestSetup` | Updated | Sparse coastal scatter |
+| `Preset_ForestDense` | `PCGT_ForestSetup` | Updated | Dense forest scatter |
+| `Preset_MountainRocky` | `PCGT_HillsideVegetation` | Updated | Rocky hillside configuration |
+| `Preset_UrbanGrid` | `PCGT_GridSnap` | Updated | Grid-aligned urban placement |
 
 ---
 
 ## Applying a preset
 
-1. Select a **PCGVolume** (or any actor with a PCGComponent) in the level.
-2. Open the **Graph Inspector** from the toolbar (or right-click the actor → **Open in PCG Graph Inspector**).
-3. In the **Preset** dropdown at the bottom of the Inspector, select the preset you want.
+1. Select a PCG actor.
+2. Open **Graph Inspector**.
+3. Select a preset.
 4. Click **Apply Preset**.
-5. The overrides are written into the matching nodes. The operation is **undoable** (Ctrl+Z).
+5. Regenerate manually, or keep Auto-Regenerate enabled.
 
-If **Auto-Regenerate** is enabled, the graph re-runs immediately after applying.
+Apply matches overrides by settings class and property name.
 
----
+### Multiple nodes of the same class
 
-## Saving a preset (Snapshot)
+A class-targeted override can apply to every compatible node using that settings class. Review the graph when several nodes of one type need different values.
 
-1. Configure the graph's node parameters the way you want them.
-2. In the Graph Inspector, click **Save as Preset**.
-3. The standard Content Browser **Create Asset** dialog opens, defaulting to your project's `/Game` content. Choose a location and name, then confirm.
-4. A new `UPCGProKitPresetAsset` is created with all current `PCG_Overridable` values captured from every node in the graph. It appears in the preset dropdown immediately.
-5. Save it to disk like any other asset (Ctrl+S or Save All).
+### Incompatible entries
 
-> **Presets are saved into your project**, not into the plugin. This keeps your presets safe across plugin updates and re-installs, and lets them live under your project's source control. The 4 shipped presets remain in the plugin content and are always available in the dropdown alongside your own.
-
-The snapshot captures **Float**, **Integer**, and **Bool** properties. Vector and string properties are not captured in v1.1.
+Entries with missing classes, missing properties, or incompatible types are skipped silently. The remaining valid entries continue to apply.
 
 ---
 
-## Creating a preset manually
+## Saving a preset
 
-1. In the Content Browser → right-click → **Miscellaneous → Data Asset**.
-2. Choose `PCGProKitPresetAsset` as the class.
-3. Fill in `PresetName` and optionally `Description` and `TargetGraph` (informational only — presets can be applied to any graph).
-4. Add entries to the `Overrides` array. Each entry requires:
-   - `NodeClass` — the settings class to target (e.g. `UPCGBlueNoiseScatterSettings`)
-   - `PropertyName` — the exact `UPROPERTY` name on that class (e.g. `MinDistance`)
-   - `Type` — `Float`, `Integer`, or `Bool`
-   - The corresponding value field (`FloatValue`, `IntValue`, or `BoolValue`)
+1. Configure the graph.
+2. Open Graph Inspector.
+3. Click **Save as Preset**.
+4. Choose a project content path in the Content Browser dialog.
+5. Save the new `UPCGProKitPresetAsset`.
 
----
+`CaptureFromComponent()` scans supported `PCG_Overridable` values in the selected component graph.
 
-## Preset property type reference
-
-All `PCG_Overridable` properties currently overridable by the preset system:
-
-| Node | Property | Type |
-|---|---|---|
-| Blue Noise Scatter | `MinDistance` | Float |
-| Blue Noise Scatter | `MaxAttempts` | Int |
-| Blue Noise Scatter | `MaxPoints` | Int |
-| Boundary Detect | `NeighborRadius` | Float |
-| Boundary Detect | `MinNeighborCount` | Int |
-| Clump Scatter | `ClumpSize` | Int |
-| Clump Scatter | `ClumpRadius` | Float |
-| Clump Scatter | `bScaleFalloff` | Bool |
-| Clump Scatter | `MinEdgeScale` | Float |
-| Clump Scatter | `bKeepSourcePoint` | Bool |
-| Density Falloff | `Radius` | Float |
-| Density Falloff | `bCenterRelativeToVolume` | Bool |
-| Grid Snap | `GridSize` | Float |
-| Grid Snap | `bSnapRotationToGrid` | Bool |
-| Height Filter | `MinZ` | Float |
-| Height Filter | `MaxZ` | Float |
-| Height Filter | `bUseLandscapeReference` | Bool |
-| Landscape Layer Sampler | `MinWeight` | Float |
-| Landscape Layer Sampler | `bModulateDensity` | Bool |
-| Landscape Layer Sampler | `bInvertFilter` | Bool |
-| Noise Mask Filter | `NoiseScale` | Float |
-| Noise Mask Filter | `Threshold` | Float |
-| Noise Mask Filter | `FalloffWidth` | Float |
-| Noise Mask Filter | `bInvertMask` | Bool |
-| Print Stats | `bPrintEnabled` | Bool |
-| Project To Landscape | `ZOffset` | Float |
-| Project To Landscape | `bProjectRotation` | Bool |
-| Relax Points | `Iterations` | Int |
-| Relax Points | `SearchRadius` | Float |
-| Relax Points | `RelaxStrength` | Float |
-| Slope Filter | `MinAngle` | Float |
-| Slope Filter | `MaxAngle` | Float |
-| Slope Filter | `FalloffAngle` | Float |
-| Slope Filter | `bInvertFilter` | Bool |
-| Spline Avoidance | `AvoidanceRadius` | Float |
-| Spline Avoidance | `FalloffRadius` | Float |
-| Spline Avoidance | `bInvertSelection` | Bool |
-| Water Body Avoidance | `AvoidanceRadius` | Float |
-| Water Body Avoidance | `FalloffRadius` | Float |
-| Water Body Avoidance | `bInvertSelection` | Bool |
-| Weighted Selection By Tag | `SelectionCount` | Int |
+Saved project presets remain outside plugin content and are safe from plugin updates.
 
 ---
 
-Next: [`06_Runtime_Usage.md`](06_Runtime_Usage.md)
+## Refreshing the list
+
+Click **Refresh Presets** after creating or adding preset assets.
+
+The preset picker discovers shipped plugin presets and compatible project presets.
+
+---
+
+## Editing a preset manually
+
+1. Create a Data Asset using `PCGProKitPresetAsset`.
+2. Set:
+   - `PresetName`
+   - `Description`
+   - optional `TargetGraph`
+3. Add `Overrides`.
+4. For each entry, specify:
+   - `NodeClass`
+   - exact C++ `PropertyName`
+   - `Type`
+   - corresponding stored value
+
+Property names must match the C++ `UPROPERTY` name, not the UI label.
+
+---
+
+## Spline Offset presets
+
+Spline Offset uses:
+
+- `SideMode`
+- `ScatterWidth` for Both
+- `LeftWidth` for Left Only
+- `RightWidth` for Right Only
+- Center and edge density values
+
+`ScatterWidth` is still the active width for Both mode. It is not replaced by LeftWidth and RightWidth.
+
+---
+
+## Preset limitations
+
+- Seed values are not stored.
+- Unsupported property types are not captured.
+- Incompatible overrides do not produce a blocking error.
+- Preset application is class-based; graphs containing several instances of one settings class require verification.
+- Editing shipped preset assets directly is not recommended.
+
+---
+
+Next: [06 — Runtime Usage](06_Runtime_Usage.md)

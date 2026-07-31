@@ -1,6 +1,6 @@
 # 07 — API Reference
 
-This page summarizes the public C++ integration surface of PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
+This page documents the public C++ integration surface of PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
 
 ---
 
@@ -8,7 +8,7 @@ This page summarizes the public C++ integration surface of PCG Pro Tools v2.0.0 
 
 | Module | Type | Purpose |
 |---|---|---|
-| `PCGProKit` | Runtime | Custom node settings, preset assets, project settings |
+| `PCGProKit` | Runtime | Custom node settings, preset assets, project settings, runtime helpers |
 | `PCGProKitEditor` | Editor | Toolbar, Graph Inspector, Template Library, Debug Overlay |
 
 Never add a dependency on `PCGProKitEditor` from a runtime module.
@@ -65,15 +65,18 @@ Source/PCGProKit/Public/Nodes/
 | `UPCGWaterBodyAvoidanceSettings` | `PCGWaterBodyAvoidanceSettings.h` |
 | `UPCGWeightedSelectionByTagSettings` | `PCGWeightedSelectionByTagSettings.h` |
 
+All settings classes derive from `UPCGSettings`.
+
 ---
 
 ## v2 enums
 
-### EPCGSplineOffsetSideMode
+### `EPCGSplineOffsetSideMode`
 
 Declared in `PCGSplineOffsetSettings.h`.
 
 ```cpp
+UENUM(BlueprintType)
 enum class EPCGSplineOffsetSideMode : uint8
 {
     Both,
@@ -82,11 +85,12 @@ enum class EPCGSplineOffsetSideMode : uint8
 };
 ```
 
-### EPCGDensityFalloffMode
+### `EPCGDensityFalloffMode`
 
 Declared in `PCGBiomeMaskSettings.h`.
 
 ```cpp
+UENUM(BlueprintType)
 enum class EPCGDensityFalloffMode : uint8
 {
     Linear,
@@ -97,13 +101,41 @@ enum class EPCGDensityFalloffMode : uint8
 
 ---
 
-## Existing enums
+## Existing public enums
 
-### EPCGDebugOverlayScope
+### `EPCGFalloffMode`
+
+Declared in `PCGDensityFalloffSettings.h`.
+
+```cpp
+UENUM(BlueprintType)
+enum class EPCGFalloffMode : uint8
+{
+    Linear,
+    Exponential,
+    Curve,
+};
+```
+
+### `EPCGSearchTarget`
+
+Declared in `PCGDistanceToNearestTagSettings.h`.
+
+```cpp
+UENUM(BlueprintType)
+enum class EPCGSearchTarget : uint8
+{
+    AllTagged,
+    SpecificTag,
+};
+```
+
+### `EPCGDebugOverlayScope`
 
 Declared in `PCGProKitSettings.h`.
 
 ```cpp
+UENUM()
 enum class EPCGDebugOverlayScope : uint8
 {
     SelectedOnly,
@@ -112,11 +144,12 @@ enum class EPCGDebugOverlayScope : uint8
 };
 ```
 
-### EPCGProKitPresetParamType
+### `EPCGProKitPresetParamType`
 
 Declared in `PCGProKitPresetEntry.h`.
 
 ```cpp
+UENUM(BlueprintType)
 enum class EPCGProKitPresetParamType : uint8
 {
     Float,
@@ -125,9 +158,11 @@ enum class EPCGProKitPresetParamType : uint8
 };
 ```
 
+Enums used by presets are stored through Int32 entries.
+
 ---
 
-## UPCGProKitSettings
+## `UPCGProKitSettings`
 
 `UPCGProKitSettings` derives from `UDeveloperSettings` and uses Editor config.
 
@@ -173,15 +208,27 @@ Defaults:
 | `bDeterministicMode` | false |
 | `DefaultRandomSeed` | 42 |
 
+### Public static helpers
+
+```cpp
+static bool CheckDensityCap(
+    int32 OutputPointCount,
+    const FString& NodeDisplayName);
+
+static bool CheckDensityCapFromContext(
+    FPCGContext* Context,
+    const FString& NodeDisplayName);
+```
+
+`CheckDensityCap` reports when an output count exceeds `DensityCapWarningThreshold`. `CheckDensityCapFromContext` totals point outputs in the supplied PCG context before applying the same check.
+
 ---
 
 ## Preset API
 
-### UPCGProKitPresetAsset
+### `UPCGProKitPresetAsset`
 
 `UPCGProKitPresetAsset` derives from `UDataAsset`.
-
-Important members:
 
 ```cpp
 FName PresetName;
@@ -193,11 +240,14 @@ bool ApplyToComponent(UPCGComponent* Component) const;
 int32 CaptureFromComponent(UPCGComponent* Component);
 ```
 
-`TargetGraph` is informational.
+- `TargetGraph` is informational and is not enforced.
+- `ApplyToComponent()` writes compatible overrides to matching settings classes.
+- `CaptureFromComponent()` captures supported `PCG_Overridable` properties.
 
-### FPCGProKitPresetEntry
+### `FPCGProKitPresetEntry`
 
 ```cpp
+USTRUCT(BlueprintType)
 struct FPCGProKitPresetEntry
 {
     TSoftClassPtr<UPCGSettings> NodeClass;
@@ -209,13 +259,15 @@ struct FPCGProKitPresetEntry
 };
 ```
 
-Enums are stored through Int32 entries.
-
 ---
 
-## Editor commands
+## Editor module
 
-`FPCGProKitCommands` registers:
+### `FPCGProKitEditorModule`
+
+Registers toolbar commands, menu entries, tabs, the Debug Overlay, and the PCG actor context-menu extension.
+
+### `FPCGProKitCommands`
 
 | Command | Purpose |
 |---|---|
@@ -223,16 +275,14 @@ Enums are stored through Int32 entries.
 | `OpenTemplateLibrary` | Open Template Library |
 | `OpenQuickTune` | Open Graph Inspector |
 
----
-
-## Editor widgets and tab IDs
+### Editor widgets and tab IDs
 
 | Widget | Tab ID | Purpose |
 |---|---|---|
-| `SPCGTemplateLibraryWidget` | `PCGProKitTemplateLibrary` | Template search, categories, add, copy |
-| `SPCGQuickTuneWidget` | `PCGProKitQuickTune` | Graph Inspector, presets, seeds, validation |
+| `SPCGTemplateLibraryWidget` | `PCGProKitTemplateLibrary` | Template search, categories, Add to Level, editable copy |
+| `SPCGQuickTuneWidget` | `PCGProKitQuickTune` | Graph Inspector, node parameters, presets, seeds, validation |
 
-Internal helper types such as `FPCGNodeParamRow` and overlay ticker implementation details are not intended as stable public integration APIs.
+Internal helper types such as `FPCGNodeParamRow` and the overlay ticker are implementation details, not stable public integration APIs.
 
 ---
 
@@ -272,7 +322,7 @@ Main-thread nodes:
 
 All other v2 settings classes are async-capable.
 
-Landscape Layer Sampler performs its actual sampling only inside editor builds.
+Landscape Layer Sampler performs its actual layer sampling only inside editor builds.
 
 ---
 

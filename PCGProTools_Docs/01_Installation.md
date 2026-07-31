@@ -2,99 +2,162 @@
 
 ## Requirements
 
-| Requirement | Version |
+| Requirement | Value |
 |---|---|
-| Unreal Engine | 5.7 (tested on 5.7.4) |
-| PCG Framework | built-in, must be enabled |
-| Platform | Win64 (validated), Linux / Mac (code-compatible) |
+| Unreal Engine | **5.8** |
+| Required built-in plugin | Procedural Content Generation Framework (`PCG`) |
+| Supported target platforms | Win64, Linux, Mac |
+| Hard Water-plugin dependency | None |
 
-PCG Pro Tools has **no additional engine dependencies** and requires no engine modifications.
+PCG Pro Tools v2.0.0 requires no engine modifications.
+
+> UE 5.7 users must remain on PCG Pro Tools v1.1.1. The v2.0.0 `.uplugin` requires EngineVersion `5.8.0`.
 
 ---
 
 ## Option A — Install from Fab
 
-1. Purchase **PCG Pro Tools** on [Fab](https://www.fab.com).
-2. In the Epic Games Launcher → **Library** → find the plugin → click **Install to Engine** (or **Add to Project**).
-3. Restart the editor.
+1. Add **PCG Pro Tools** to your library on Fab.
+2. Install the UE 5.8 build through the Epic Games Launcher.
+3. Open the target project.
+4. Enable **PCG Pro Tools** when prompted.
+5. Restart Unreal Editor.
 
 ---
 
-## Option B — Manual install
+## Option B — Manual project installation
 
-1. Copy the `PCGProKit/` folder into your project:
-   ```
+1. Close Unreal Editor.
+2. Copy the plugin folder to:
+
+   ```text
    <YourProject>/Plugins/PCGProKit/
    ```
-2. Open your `.uproject` file and verify the entry exists (or add it):
+
+3. Confirm that the plugin is enabled in the `.uproject` file or through **Edit → Plugins**:
+
    ```json
    {
      "Name": "PCGProKit",
      "Enabled": true
    }
    ```
-3. Open the project in Unreal Engine. You will be prompted to compile the plugin — click **Yes**.
+
+4. Confirm the built-in `PCG` plugin is enabled.
+5. Regenerate project files when using a source project.
+6. Compile and reopen the project.
 
 ---
 
 ## Enable the plugin
 
-1. **Edit → Plugins** → search for **PCG Pro Tools**.
-2. Enable it and restart the editor when prompted.
-3. Also verify that the built-in **Procedural Content Generation Framework** plugin is enabled (it ships with UE 5.7 and is usually on by default).
+1. Open **Edit → Plugins**.
+2. Search for **PCG Pro Tools**.
+3. Enable it.
+4. Search for **Procedural Content Generation Framework** and confirm it is enabled.
+5. Restart the editor.
+
+The Water plugin is optional. Enable it only for workflows that use Water Body Avoidance or the corresponding demo/template.
 
 ---
 
-## First launch checklist
+## First-launch checklist
 
-After restarting the editor, confirm the following:
+After restarting, verify:
 
-- **Toolbar:** Three new buttons appear in the Level Editor toolbar — **Debug Overlay**, **Template Library**, and **Graph Inspector**.
-- **Content Browser:** Enable **Show Plugin Content** (filter icon → bottom of dropdown) to see `Plugins/PCGProKit Content/`.
-- **PCG node palette:** In any PCG Graph, right-click → search **PCG Pro** — all 17 nodes should appear.
+- The Level Editor toolbar contains **Debug Overlay**, **Template Library**, and **Graph Inspector**.
+- The plugin also appears under **Window → PCG Pro Tools** if the toolbar buttons are unavailable.
+- **Show Plugin Content** is enabled in the Content Browser.
+- `Plugins/PCGProKit Content/` is visible.
+- Searching `PCG Pro` in a PCG Graph shows **22 custom nodes**.
+- The Template Library lists **23 templates**.
 
-If any of these are missing, see [`08_Troubleshooting.md`](08_Troubleshooting.md).
+See [Troubleshooting](08_Troubleshooting.md) if any item is missing.
 
 ---
 
 ## Opening a demo map
 
-1. In the Content Browser, navigate to `Plugins/PCGProKit Content/Maps/`.
-2. Open any `Demo_*` map (e.g. `Demo_BoundaryDetect`).
-3. Select the **PCGVolume** actor → in the Details panel, find the **PCGComponent** → click **Generate**.
+1. Enable **Show Plugin Content**.
+2. Open `Plugins/PCGProKit Content/Maps/`.
+3. Open a `Demo_*` map.
+4. Select its PCG actor or volume.
+5. Press **Generate** when the graph uses On Demand generation.
 
-There are **15 demo maps**. Each showcases a specific feature or pipeline; some maps combine multiple nodes to demonstrate a complete workflow rather than a single node:
+PCG Pro Tools v2.0.0 includes **21 demo maps**:
 
-| Map | Demonstrates |
+| Demo map | Purpose |
 |---|---|
-| Demo_BiomeTransition | Noise-based biome blending |
-| Demo_BoundaryDetect | Edge detection on point clouds |
-| Demo_ClumpScatter | Organic cluster placement |
-| Demo_CurvatureFilter | Slope-based filtering |
-| Demo_DistanceTag | Nearest-point distance attributes |
-| Demo_ForestSetup | Full forest scatter pipeline |
-| Demo_GridSnap | Grid-aligned prop placement |
-| Demo_HillsideVegetation | Combined slope + height filtering |
-| Demo_LandscapeLayerSampler | Paint-layer driven placement |
-| Demo_NoiseMaskFilter | Noise-driven density variation |
-| Demo_RelaxPoints | Lloyd relaxation for even spacing |
-| Demo_SplineAvoidance | Clearing points near splines |
-| Demo_SplineRoad | Roadside dressing along a spline |
-| Demo_WaterBodyAvoidance | Clearing points near water bodies |
-| Demo_WeightedSelection | Biome-weighted asset selection |
+| `Demo_InstanceVariation` | Scale, rotation, and point-color variation |
+| `Demo_SplineOffset` | Left/right/both-side spline offset placement |
+| `Demo_DistanceLOD` | Distance-based density reduction |
+| `Demo_RandomSubset` | Deterministic percentage-based selection |
+| `Demo_BiomeMask` | Radial biome-density shaping and transition zones |
+| `Demo_RoadsideGenerator` | Prepared roadside spline workflow |
+| `Demo_BiomeTransition` | Multi-stage biome transition workflow |
+| `Demo_BoundaryDetect` | Point-cloud boundary detection |
+| `Demo_ClumpScatter` | Organic clusters |
+| `Demo_CurvatureFilter` | Slope-based filtering |
+| `Demo_DistanceTag` | External POI distance detection |
+| `Demo_ForestSetup` | Full forest pipeline |
+| `Demo_GridSnap` | Grid-aligned placement |
+| `Demo_HillsideVegetation` | Slope and height-based vegetation |
+| `Demo_LandscapeLayerSampler` | Landscape paint-layer placement |
+| `Demo_NoiseMaskFilter` | Noise-driven masks |
+| `Demo_RelaxPoints` | Lloyd-style point relaxation |
+| `Demo_SplineAvoidance` | Clearing vegetation around splines |
+| `Demo_SplineRoad` | Spline-based roadside placement |
+| `Demo_WaterBodyAvoidance` | Clearing points near Water Body splines |
+| `Demo_WeightedSelection` | Weighted selection from tagged datasets |
+
+### Demo visualization assets
+
+Most templates and demo maps use example assets from Unreal Engine's built-in PCG plugin, including meshes under:
+
+```text
+/PCG/SampleContent/
+```
+
+These assets are available with the required PCG plugin and are used only to visualize the procedural workflows. Replace the Static Mesh Spawner entries with assets from your own project when building production content.
+
+`Demo_LandscapeLayerSampler` includes its required `LI_Grass` Landscape Layer Info asset inside PCG Pro Tools plugin content. `Demo_GridSnap` uses the regular Engine Content cube at `/Engine/BasicShapes/Cube`.
 
 ---
 
-## Upgrading from v1.0
+## Upgrading from v1.1.1 to v2.0.0
 
-If you are upgrading an existing project from PCG Pro Tools v1.0:
+1. Back up the project or commit the current state to source control.
+2. Close Unreal Editor and the IDE.
+3. Delete the existing plugin folder:
 
-1. Replace the old `PCGProKit/` folder entirely with the v1.1 folder.
-2. Recompile when prompted.
- 3. **`SurfaceSlopeFilter` was renamed to `Slope Filter` (`UPCGCurvatureFilterSettings`).** Any PCG graph that contained the old node will show a broken node — replace it with the new **PCG Pro: Slope Filter** node and re-enter the property values.
- 4. **Renamed assets:** `PCGT_VillageCorner` → `PCGT_ForestSetup`, `DemoVillageCorner` → `Demo_ForestSetup`, and `PCGT_GridBuildings` → `PCGT_GridSnap`. Update any level or graph references accordingly.
- 5. All other v1.0 nodes retain their class names and are backward-compatible.
- 
- ---
+   ```text
+   <YourProject>/Plugins/PCGProKit/
+   ```
 
-Next: [`02_Workflow.md`](02_Workflow.md)
+4. Copy the v2.0.0 plugin folder into the same location.
+5. Delete generated build data:
+
+   ```text
+   <YourProject>/Binaries/
+   <YourProject>/Intermediate/
+   <YourProject>/Plugins/PCGProKit/Binaries/
+   <YourProject>/Plugins/PCGProKit/Intermediate/
+   ```
+
+6. Regenerate project files.
+7. Compile the project.
+8. Open the project in Unreal Engine 5.8.
+9. Load representative existing graphs and run a regeneration test.
+
+### Compatibility
+
+- Existing v1.1.1 graph assets remain compatible.
+- The 17 existing node classes retain their v1.1.1 names, properties, defaults, clamps, and pins.
+- No v1.1.1-to-v2.0.0 asset rename or Core Redirect is required.
+- Existing v1.1.1 presets remain compatible.
+
+Historical v1.0-to-v1.1 breaking changes are retained only in the [Changelog](09_Changelog.md).
+
+---
+
+Next: [02 — Workflow](02_Workflow.md)

@@ -1,176 +1,271 @@
 # 08 — Troubleshooting
 
+This page applies to PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
+
 ---
 
 ## 8.1 — Toolbar buttons are missing
 
-**Symptom:** The Debug Overlay / Template Library / Graph Inspector buttons do not appear in the Level Editor toolbar.
+**Symptom:** Debug Overlay, Template Library, or Graph Inspector is not visible.
+
+**Checks:**
+
+1. Enable **PCG Pro Tools**.
+2. Enable the built-in **PCG** plugin.
+3. Restart the editor.
+4. Open the tools through **Window → PCG Pro Tools**.
+5. Check the Output Log for `LogPCGProKit` startup errors.
+
+---
+
+## 8.2 — Custom nodes do not appear
+
+**Symptom:** Searching `PCG Pro` in a graph does not show all 22 nodes.
 
 **Fix:**
-1. Confirm the plugin is enabled: **Edit → Plugins →** search **PCG Pro Tools** → must be checked.
-2. Confirm the **Procedural Content Generation Framework** (PCG) plugin is also enabled.
-3. Restart the editor after enabling both.
-4. If buttons still don't appear, check the Output Log for `LogPCGProKit` errors at startup.
+
+- Confirm the project is running UE 5.8.
+- Confirm the plugin folder is not nested incorrectly.
+- Remove stale plugin/project `Binaries` and `Intermediate`.
+- Regenerate project files and rebuild.
+- Confirm `PCGProKit` loads as a Runtime module.
 
 ---
 
-## 8.2 — Nodes don't appear in the PCG Graph palette
+## 8.3 — Graph Inspector upper panel is empty
 
-**Symptom:** Right-clicking in a PCG Graph and searching "PCG Pro" finds nothing.
+The upper panel displays only graph-exposed `UPCGGraphInstance` parameters.
 
-**Fix:**
-1. The plugin DLLs may be stale after a code change. Rebuild: close the editor, rebuild from Visual Studio / Rider, reopen.
-2. Verify the `PCGProKit` Runtime module is listed in the `.uplugin` and has a `LoadingPhase` of `Default`.
-3. If you installed manually, confirm the folder is at `<YourProject>/Plugins/PCGProKit/` (not nested an extra level deep).
+Expose a graph property when it must appear there.
 
----
-
-## 8.3 — "PCG Pro: Slope Filter" node is missing / broken graph from v1.0
-
-**Symptom:** A graph saved in v1.0 shows a broken/unknown node where the slope filter was.
-
-**Cause:** The node was renamed from `SurfaceSlopeFilter` to **PCG Pro: Slope Filter** (`UPCGCurvatureFilterSettings`) in v1.1.
-
-**Fix:** Delete the broken node, add a new **PCG Pro: Slope Filter** node, and re-enter the `MinAngle` / `MaxAngle` / `FalloffAngle` values.
+The lower Node Parameter panel is separate and should still list supported `PCG_Overridable` Float, Int32, and Bool properties.
 
 ---
 
-## 8.4 — Spline nodes produce no output in cooked/async builds
+## 8.4 — A node property is missing from the lower panel
 
-**Symptom:** Spline Avoidance or Align To Nearest Spline outputs 0 points (or all points) in a packaged game or async execution mode.
+The direct node panel supports Float, Int32, and Bool parameter rows. Unsupported property types are not represented by the current row implementation.
 
-**Cause:** No spline actors were found, or their references did not resolve.
-
-> As of v1.1 these nodes run on the game thread, so in-editor auto-discovery and tag lookup work reliably. If you still get no output, the spline references are simply not resolving (unloaded actors, wrong tag, or cooked build).
-
-**Fix:** Always do one of the following:
-- Set `SplineActorTag` to a tag name **and** add that same tag to your spline actor (Details → Actor → Tags). This is the recommended approach.
-- Or populate the `SplineActors` array directly with explicit actor references.
-- For cooked/runtime builds, always assign references explicitly — a blind world scan is non-deterministic and the target actors must be loaded.
+Also confirm the property is marked `PCG_Overridable`.
 
 ---
 
-## 8.5 — Water Body Avoidance does nothing
+## 8.5 — Seed Lock resets
 
-**Symptom:** All points pass through unchanged even though water bodies exist in the level.
+Seed Lock is Graph Inspector widget state. It is intentionally not saved to the actor, level, or config.
 
-**Causes and fixes:**
-1. **Water plugin not enabled.** Enable it in **Edit → Plugins → Water**. If it is not enabled, the node passes through all points by design.
-2. **Async execution.** Same as 8.4 — assign `WaterBodyActors` explicitly.
-3. **Wrong actor type.** The node discovers actors via reflection by class name `AWaterBody*`. If you are using a custom water actor that does not inherit from `AWaterBody`, it will not be found automatically. Assign it explicitly via `WaterBodyActors`.
+Re-enable it after reopening the editor or recreating the tab.
 
 ---
 
-## 8.6 — Landscape Layer Sampler removes all points
+## 8.6 — Point count does not update immediately
 
-**Symptom:** Zero points survive the Landscape Layer Sampler node.
+Point count refreshes after component regeneration and reads all point outputs from `GetPCGData()`.
 
-**Causes and fixes:**
-1. **`LayerName` mismatch.** The name must match exactly the `Layer Name` field on the `ULandscapeLayerInfoObject` asset (case-sensitive). Open the `LayerInfoObject` and confirm.
-2. **Layer has no paint data.** The layer exists as an asset but has not been painted anywhere on the landscape. Paint some weight first.
-3. **`MinWeight` too high.** Default is 0.1. If the painted layer has only light weight, reduce `MinWeight`.
-4. **Multiple landscapes in the level.** The node auto-discovers the first landscape it finds. If you have more than one, set `LandscapeRef` explicitly to the one you want to sample.
-5. **Non-editor build.** The node is editor-only. In packaged builds all points pass through unchanged — this is expected.
-
-> **World Partition:** as of v1.1 the node samples across all landscape streaming proxies, so partitioned landscapes work correctly. If you still see points dropped, set `LandscapeRef` explicitly.
+Wait for generation to finish or use **Regenerate Selected**.
 
 ---
 
-## 8.7 — Height Filter removes all or no points
+## 8.7 — Undo, Redo, or Reset appears delayed
 
-**Symptom:** The Height Filter node removes everything, or nothing.
+The Graph Inspector waits while the PCG component reports active generation, then flushes its cache and regenerates.
 
-**Check:**
-- If `bUseLandscapeReference` is true, `LandscapeRef` must be assigned. If it is null, the node falls back to world-space Z which may not match your intended range.
-- Confirm `MinZ` < `MaxZ`. Swapped values will produce an empty range.
-- Z values are in centimetres. 1 m = 100 cm. Double-check your scale.
+A short delay is expected. Repeatedly clicking controls during generation can extend the wait.
 
 ---
 
-## 8.8 — Boundary Detect marks all or no points as boundary
+## 8.8 — Preset Apply changes nothing
 
-**Symptom:** Every point gets `bIsBoundary = true`, or none do.
+Check:
 
-**Fix:**
-- If all points are boundary: `NeighborRadius` is too small relative to your point spacing. Increase it to ~2× the average distance between points.
-- If no points are boundary: `NeighborRadius` is very large (every point has many neighbors) or `MinNeighborCount` is too low. Reduce `NeighborRadius` or increase `MinNeighborCount`.
+- The graph contains the target settings class.
+- `PropertyName` matches the exact C++ property name.
+- The stored type matches the property.
+- The relevant properties are supported by the preset system.
 
----
+Incompatible entries are skipped silently.
 
-## 8.9 — Blue Noise Scatter outputs fewer points than expected
-
-**Symptom:** Fewer output points than the input had, even with a large area.
-
-**Cause:** `MinDistance` may be too large for the input density. Blue Noise Scatter thins the input — it does not generate new points.
-
-**Fix:** Reduce `MinDistance`, or increase your input point density (larger PCGVolume / denser Surface Sampler grid).
+When several nodes use the same settings class, the override can affect each compatible node.
 
 ---
 
-## 8.10 — Density Falloff has no visible effect
+## 8.9 — Template search finds no result
 
-**Symptom:** Point density looks the same before and after the node.
+Search matches the template asset name only and is case-insensitive.
 
-**Check:**
-- `bCenterRelativeToVolume = true` (default). This means `Center = (0,0,0)` is the PCGVolume's origin, not world (0,0,0). If your volume is centred, this is correct. If you want world-space, disable the flag.
-- Check that `Radius` is large enough relative to the PCGVolume size.
-- Density Falloff multiplies the `Density` value on each point. If the downstream node does not filter on density, there will be no visible change. Pair it with a Density Filter or ensure your spawner uses density.
+Clear the category filter, then search for a term contained in the asset name.
 
----
+Examples:
 
-## 8.11 — Graph Inspector shows no parameters
-
-**Symptom:** The Graph Inspector is open, a PCG actor is selected, but the node parameter list is empty.
-
-**Cause:** The node parameter panel shows `PCG_Overridable` properties. If no parameters have been exposed, the panel is intentionally empty.
-
-**Fix:** Open the PCG Graph, right-click a property on any node, and choose **Expose to Graph Instance**. It will then appear in the editable top section of the Inspector.
+```text
+Spline
+Forest
+Distance
+Biome
+```
 
 ---
 
-## 8.12 — Preset Apply has no effect
+## 8.10 — Add to Level warns about a missing Landscape
 
-**Symptom:** Clicking Apply Preset in the Graph Inspector does not change node values.
+The selected template is classified as Landscape-dependent.
 
-**Check:**
-1. The `NodeClass` in each `FPCGProKitPresetEntry` must match the actual settings class in the graph (subclasses also match). Confirm the class names.
-2. The `PropertyName` must be the **exact C++ UPROPERTY name** (e.g. `MinDistance`, not `Min Distance`).
-3. The `Type` field must match the property type. A `Float` entry on an `int32` property will silently fail.
+Add or load a Landscape actor before trying again. In World Partition, load the cell containing the required Landscape.
 
 ---
 
-## 8.13 — Performance warning notification appears
+## 8.11 — Create Editable Copy cannot be undone
 
-**Symptom:** An editor notification fires saying a node output too many points.
+Copy creates a project asset through a filesystem/content operation, not an editor transaction.
 
-**This is expected behaviour.** The `DensityCapWarningThreshold` in Project Settings is a non-blocking warning, not an error. No data is lost.
-
-**Options:**
-- Reduce the output point count by tightening filter parameters.
-- Raise or disable the threshold (**Edit → Project Settings → Plugins → PCG Pro Tools → Performance Guards → `DensityCapWarningThreshold`**, set to 0 to disable).
+Delete the copied asset manually when no longer needed.
 
 ---
 
-## 8.14 — Debug Overlay drops FPS
+## 8.12 — Spline workflow finds no spline
 
-**Symptom:** Enabling the Debug Overlay significantly reduces editor frame rate.
+Preferred setup:
 
-**Fix:**
-- Change **Overlay Scope** to `SelectedOnly` (default) in **Project Settings → Plugins → PCG Pro Tools → Debug Overlay**.
-- Reduce `MaxPointsPerComponent`.
-- Do not use `AllInLevel` scope on large levels with many PCG actors.
+1. Add an Actor Tag such as `Road`.
+2. Set `SplineActorTag` to the same value.
+3. Confirm the actor is loaded.
+
+Direct `SplineActors` soft references work only when the target actor is packaged and loaded.
+
+Blind world scanning must not be relied on in cooked builds.
 
 ---
 
-## 8.15 — Reporting a bug
+## 8.13 — Setup Validator reports a missing actor that exists
 
-When opening an issue, include:
+The validator checks loaded actors.
 
-1. Engine version (must be 5.7.x)
-2. PCG Pro Tools version (check the `.uplugin` `VersionName` field)
-3. Which demo map or template reproduces the issue
-4. PCGVolume config (template used, preset applied if any)
-5. Relevant Output Log lines (filter by `LogPCGProKit`)
-6. Minimal repro map if possible
+Possible causes:
 
-Open issues on the GitHub repository or post in the Discord: [discord.gg/vgpmnN6nCR](https://discord.gg/vgpmnN6nCR)
+- World Partition cell is unloaded.
+- Actor tag does not exactly match.
+- A direct soft reference is unresolved.
+- Required Water plugin is disabled.
+- The validator is checking a different selected PCG actor/graph.
+
+Load the relevant actors and validate again.
+
+---
+
+## 8.14 — Water Body Avoidance does nothing
+
+Check:
+
+1. Enable the UE Water plugin.
+2. Confirm the actor derives from `AWaterBody`.
+3. Confirm the actor is loaded.
+4. Confirm avoidance radius/falloff values.
+5. In cooked builds, verify references and packaging.
+
+The plugin has no hard Water dependency. Without Water Body classes/actors, input passes through.
+
+---
+
+## 8.15 — Landscape Layer Sampler works in editor but not packaged
+
+This is expected.
+
+The node's actual sampling code is editor-only. In non-editor builds it logs a warning and passes all points through unchanged.
+
+Do not use it as a required runtime filter.
+
+---
+
+## 8.16 — Landscape Layer Sampler misses World Partition areas
+
+The relevant Landscape cell/proxy must be loaded.
+
+Load the required cells and set `LandscapeRef` explicitly when multiple Landscapes are present.
+
+---
+
+## 8.17 — Instance Variation color is not visible
+
+The node writes point Color, not custom instance data directly.
+
+Configure:
+
+1. Static Mesh Spawner: enable `bApplyColorAsPerInstanceCustomData`.
+2. Material: read Per Instance Custom Data indices 0, 1, and 2.
+3. Use the values as RGB.
+
+Also confirm the material and mesh support the intended ISM/HISM path.
+
+---
+
+## 8.18 — Distance LOD does not remove distant points
+
+Distance LOD modifies Density only.
+
+Add a downstream Density Filter or configure the spawner to respect density. Points with Density 0 can remain in the point dataset until culled downstream.
+
+---
+
+## 8.19 — Biome Mask does not use my biome volume
+
+Biome Mask has no external Actor/Shape/Region input.
+
+It creates radial density and transition zones relative to the PCG volume center. Use downstream density filters or separate spawners.
+
+---
+
+## 8.20 — A template or demo map shows a missing example mesh
+
+Most templates and demo maps use visualization assets from Unreal Engine's built-in PCG plugin, commonly under:
+
+```text
+/PCG/SampleContent/
+```
+
+Confirm that the required PCG plugin is enabled and that plugin content is mounted. For production use, replace the example Static Mesh Spawner references with assets from your own project.
+
+`Demo_GridSnap` uses `/Engine/BasicShapes/Cube`, and the Landscape Layer Sampler demo includes its required `LI_Grass` asset in PCG Pro Tools plugin content.
+
+---
+
+## 8.21 — Distance Tag demo or workflow finds no POIs
+
+The corrected v2 demo expects:
+
+- Actors tagged `POI`
+- Get Actor Data set to all world actors
+- Selection by Actor Tag
+- Select Multiple enabled
+- Target data tagged `TargetPoints`
+
+Move or retag a POI actor and regenerate when the live result does not update.
+
+---
+
+## 8.22 — Debug Overlay reduces editor FPS
+
+Use:
+
+- `SelectedOnly`
+- Lower `MaxPointsPerComponent`
+- Shorter label draw distance
+- Node Type Debug Filter
+- Avoid `AllInLevel` in large levels
+
+---
+
+## 8.23 — Reporting a bug
+
+Include:
+
+1. Unreal Engine version: 5.8.x
+2. PCG Pro Tools version
+3. Template or demo map
+4. Selected actor and graph setup
+5. Preset and seed
+6. Relevant `LogPCGProKit` lines
+7. Expected result
+8. Actual result
+9. Minimal reproduction steps
+
+Open a GitHub issue or post in Discord: [discord.gg/vgpmnN6nCR](https://discord.gg/vgpmnN6nCR)

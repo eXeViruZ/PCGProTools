@@ -1,6 +1,6 @@
 # 06 — Runtime Usage
 
-This page documents PCG Pro Tools v2.0.0 behavior in Unreal Editor, PIE, Standalone launched from the editor, and packaged builds.
+This page documents PCG Pro Tools v3.0.0 behavior in Unreal Editor, PIE, Standalone launched from the editor, and packaged builds.
 
 ---
 
@@ -115,32 +115,25 @@ For packaged projects:
 
 ## Seed and determinism
 
-Randomized nodes include:
+Seed behaviour differs per node:
 
-- Instance Variation
-- Spline Offset
-- Random Subset
-- Blue Noise Scatter
-- Clump Scatter
-- Noise Mask Filter
-- Weighted Selection By Tag
+| Node | Seed |
+|---|---|
+| Blue Noise Scatter, Weighted Selection By Tag | Own **Seed** setting |
+| Clump Scatter, Instance Variation, Random Subset, Spline Offset | Fixed seed: the same input always gives the same result |
+| Noise Mask Filter | No seed; use its noise offset |
 
-The Graph Inspector edits `PCGComponent.Seed`.
+The Graph Inspector edits `PCGComponent.Seed`. Native PCG nodes use the component seed; PCG Pro Tools nodes do not.
 
-### Editor deterministic setting
+### Legacy settings
 
-`UPCGProKitSettings` contains:
-
-- `bDeterministicMode`
-- `DefaultRandomSeed` (default 42)
-
-These settings are stored in Editor config.
+`UPCGProKitSettings` still contains `bDeterministicMode` and `DefaultRandomSeed` (default 42). No PCG Pro Tools node reads them: they never had an effect, are hidden in Project Settings since 3.0, and saved values still load.
 
 ### Runtime determinism
 
 For runtime determinism:
 
-1. Set `PCGComponent.Seed` explicitly.
+1. Set `PCGComponent.Seed` explicitly for graphs that use native PCG random nodes.
 2. Keep graph inputs and actor references stable.
 3. Avoid relying on non-deterministic world discovery.
 4. Confirm the same streamed actors are loaded before generation.

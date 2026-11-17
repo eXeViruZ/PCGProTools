@@ -1,6 +1,8 @@
 # 05 — Presets
 
-PCG Pro Tools v2.0.0 includes **13 DataAsset-based presets**.
+PCG Pro Tools v3.0.0 includes **13 DataAsset-based presets** (unchanged since v2.0.0).
+
+In 3.0, **Apply Preset** lists which entries were applied, unchanged, or skipped, and marks assets as modified only when a value really changes. **Save as Preset** never overwrites an existing asset. See [19 — Upgrading from 2.0](19_Upgrading_From_2.0.md) for custom presets with several entries per property.
 
 A preset is a `UPCGProKitPresetAsset` containing property overrides targeted at PCG settings classes.
 

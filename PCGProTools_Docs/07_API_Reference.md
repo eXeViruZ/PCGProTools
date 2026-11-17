@@ -1,6 +1,6 @@
 # 07 — API Reference
 
-This page documents the public C++ integration surface of PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
+This page documents the public C++ integration surface of PCG Pro Tools v3.0.0 for Unreal Engine 5.8.
 
 ---
 
@@ -139,7 +139,7 @@ UENUM()
 enum class EPCGDebugOverlayScope : uint8
 {
     SelectedOnly,
-    AllInActiveViewport,
+    AllVisibleInViewport,   // display name "All In Active Viewport"
     AllInLevel,
 };
 ```
@@ -189,7 +189,7 @@ TSet<FString> DebugNodeTypeFilter;
 // Performance
 int32 DensityCapWarningThreshold;
 
-// Determinism
+// Determinism (legacy, no effect, hidden in Project Settings since 3.0)
 bool bDeterministicMode;
 int32 DefaultRandomSeed;
 ```
@@ -204,7 +204,7 @@ Defaults:
 | `bShowLabelsOnlyForSelected` | true |
 | `AttributeLabelDrawDistance` | 5000 cm |
 | `bEnableNodeTypeFilter` | false |
-| `DensityCapWarningThreshold` | 1000000 |
+| `DensityCapWarningThreshold` | 50000 |
 | `bDeterministicMode` | false |
 | `DefaultRandomSeed` | 42 |
 
@@ -220,7 +220,7 @@ static bool CheckDensityCapFromContext(
     const FString& NodeDisplayName);
 ```
 
-`CheckDensityCap` reports when an output count exceeds `DensityCapWarningThreshold`. `CheckDensityCapFromContext` totals point outputs in the supplied PCG context before applying the same check.
+`CheckDensityCap` reports when an output count is strictly greater than `DensityCapWarningThreshold` (a threshold of 0 or less disables it). `CheckDensityCapFromContext` totals point outputs in the supplied PCG context before applying the same check.
 
 ---
 

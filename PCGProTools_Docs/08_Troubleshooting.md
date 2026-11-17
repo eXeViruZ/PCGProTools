@@ -1,6 +1,6 @@
 # 08 — Troubleshooting
 
-This page applies to PCG Pro Tools v2.0.0 for Unreal Engine 5.8.
+This page applies to PCG Pro Tools v3.0.0 for Unreal Engine 5.8.
 
 ---
 
@@ -66,11 +66,9 @@ Wait for generation to finish or use **Regenerate Selected**.
 
 ---
 
-## 8.7 — Undo, Redo, or Reset appears delayed
+## 8.7 — Undo or Redo does not regenerate the component
 
-The Graph Inspector waits while the PCG component reports active generation, then flushes its cache and regenerates.
-
-A short delay is expected. Repeatedly clicking controls during generation can extend the wait.
+Unreal's own PCG refresh updates the components after Undo or Redo; PCG Pro Tools does not clear the PCG cache or force a full regeneration. A component with **Regenerate In Editor** turned off is not regenerated automatically. Select it and use **Regenerate Selected**.
 
 ---
 
@@ -91,7 +89,7 @@ When several nodes use the same settings class, the override can affect each com
 
 ## 8.9 — Template search finds no result
 
-Search matches the template asset name only and is case-insensitive.
+Search matches the template asset name or its purpose text and is case-insensitive.
 
 Clear the category filter, then search for a term contained in the asset name.
 
@@ -136,9 +134,9 @@ Blind world scanning must not be relied on in cooked builds.
 
 ---
 
-## 8.13 — Setup Validator reports a missing actor that exists
+## 8.13 — Setup Check reports a missing actor that exists
 
-The validator checks loaded actors.
+Setup Check checks loaded actors.
 
 Possible causes:
 
@@ -146,9 +144,9 @@ Possible causes:
 - Actor tag does not exactly match.
 - A direct soft reference is unresolved.
 - Required Water plugin is disabled.
-- The validator is checking a different selected PCG actor or graph.
+- Setup Check is checking a different selected PCG actor or graph (each result names the actor it was checked for).
 
-Load the relevant actors and validate again.
+Load the relevant actors and click **Re-check** in the Setup Check section of the Graph Inspector.
 
 ---
 
@@ -341,9 +339,9 @@ Move or retag a POI actor and regenerate when the live result does not update.
 
 ---
 
-## 8.31 — Performance warning notification appears
+## 8.31 — Performance Guard warning in the Output Log or on a node
 
-`DensityCapWarningThreshold` is a non-blocking editor warning. No data is removed automatically.
+`DensityCapWarningThreshold` (default 50,000) produces a non-blocking warning in the Output Log (category `LogPCGProKit`) and on the PCG node; it also appears in the Generation Report. There is no popup, generation is never blocked, and no data is removed automatically. The warning fires when a node outputs strictly more points than the threshold.
 
 Options:
 
@@ -371,13 +369,32 @@ Use:
 
 ---
 
-## 8.33 — Reporting a bug
+## 8.33 — The Quick Setup button is disabled or Reset to Template is greyed out
+
+- **Quick Setup…** is available for 20 of 23 templates (not Biome Transition, Water Body Avoidance, Weighted Selection). The button explains why when a template does not support it.
+- **Template** and **Reset node to template** are disabled, with the reason in the tooltip, for graphs without origin information (hand-made or 2.0 copies), nodes added to the copy, and nodes whose template is not installed. See [14 — Editable copies and Reset to Template](14_Editable_Copies_and_Reset_to_Template.md).
+
+---
+
+## 8.34 — A PCG volume produces 0 points
+
+Open the **Graph Inspector**: the **Setup Check** names missing tags, Landscapes, or inputs, and the **Generation Report** shows node warnings and **Find First Empty Node**. See [11 — Generation Report and Setup Check](11_Generation_Report_and_Setup_Check.md). The intentional 0-point example in Showcase Valley is explained in [17 — Showcase Valley](17_Showcase_Valley.md).
+
+---
+
+## 8.35 — A tagged actor outside the volume does not update the result
+
+By default Unreal's PCG updates a Get Actor Data result only when a tagged actor inside the volume bounds changes (*Track Actors Only Within Bounds*). The 3.0 Distance Tag template has it turned off. For other graphs, turn it off on the Get Actor Data node, keep the actor inside the bounds, or run `pcg.FlushCache` and regenerate. See [18 — Known limitations](18_Known_Limitations.md).
+
+---
+
+## 8.36 — Reporting a bug
 
 Include:
 
 1. Unreal Engine version: 5.8.x
 2. PCG Pro Tools version
-3. Template or demo map
+3. Template, demo map, or Showcase Valley volume
 4. Selected actor and graph setup
 5. Preset and seed
 6. Relevant `LogPCGProKit` lines

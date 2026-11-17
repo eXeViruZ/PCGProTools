@@ -1,6 +1,6 @@
 # 04 — Nodes
 
-PCG Pro Tools v2.0.0 includes **22 custom C++ PCG nodes** for Unreal Engine 5.8.
+PCG Pro Tools v3.0.0 includes **22 custom C++ PCG nodes** (the same 22 as v2.0.0) for Unreal Engine 5.8.
 
 All nodes appear under the **PCG Pro:** prefix. Supported node properties marked `PCG_Overridable` can be edited in the Graph Inspector and captured by the preset system.
 
@@ -8,22 +8,22 @@ All nodes appear under the **PCG Pro:** prefix. Supported node properties marked
 
 ## Quick reference
 
-| Node | Settings class | Category | Pins | Runtime | Seed |
+| Node | Settings class | Category | Pins | Runtime | Seed setting |
 |---|---|---|---|---|---|
-| Instance Variation | `UPCGInstanceVariationSettings` | Filter | Points → Points | Full | Yes |
-| Spline Offset | `UPCGSplineOffsetSettings` | Spatial | Points → Points | Full | Yes |
+| Instance Variation | `UPCGInstanceVariationSettings` | Filter | Points → Points | Full | Fixed seed |
+| Spline Offset | `UPCGSplineOffsetSettings` | Spatial | Points → Points | Full | Fixed seed |
 | Distance LOD | `UPCGDistanceLODSettings` | Filter | Points → Points | Full | No |
-| Random Subset | `UPCGRandomSubsetSettings` | Filter | Points → Points | Full | Yes |
+| Random Subset | `UPCGRandomSubsetSettings` | Filter | Points → Points | Full | Fixed seed |
 | Biome Mask | `UPCGBiomeMaskSettings` | Filter | Points → Points | Full | No |
 | Blue Noise Scatter | `UPCGBlueNoiseScatterSettings` | Scatter | Points → Points | Full | Yes |
 | Boundary Detect | `UPCGBoundaryDetectSettings` | Filter | Points → Points | Full | No |
-| Clump Scatter | `UPCGClumpScatterSettings` | Scatter | Points → Points | Full | Yes |
+| Clump Scatter | `UPCGClumpScatterSettings` | Scatter | Points → Points | Full | Fixed seed |
 | Density Falloff | `UPCGDensityFalloffSettings` | Filter | Points → Points | Full | No |
 | Distance To Nearest Tag | `UPCGDistanceToNearestTagSettings` | Filter | Points + Target → Points | Full | No |
 | Grid Snap | `UPCGGridSnapSettings` | Scatter | Points → Points | Full | No |
 | Height Filter | `UPCGHeightFilterSettings` | Filter | Points → Points | Full | No |
 | Landscape Layer Sampler | `UPCGLandscapeLayerSamplerSettings` | Landscape | Points → Points | Editor-only; cooked passthrough | No |
-| Noise Mask Filter | `UPCGNoiseMaskFilterSettings` | Filter | Points → Points | Full | Yes |
+| Noise Mask Filter | `UPCGNoiseMaskFilterSettings` | Filter | Points → Points | Full | No (noise offset) |
 | Print Stats | `UPCGPrintStatsSettings` | Utility | Points → Points | Passthrough outside editor logging | No |
 | Project To Landscape | `UPCGProjectToLandscapeSettings` | Landscape | Points → Points | Full | No |
 | Relax Points | `UPCGRelaxPointsSettings` | Filter | Points → Points | Full | No |
@@ -528,6 +528,8 @@ Pine = 1.0
 ```
 
 produces an approximate 75/25 relative selection.
+
+The node draws **with replacement**: it picks a tagged dataset by its tag weight, then a random point from that dataset, so repeats are possible. The output has exactly `SelectionCount` points if at least one input has points and a weight above 0; otherwise there is no output and the warning "No valid weighted sources found." appears.
 
 ---
 

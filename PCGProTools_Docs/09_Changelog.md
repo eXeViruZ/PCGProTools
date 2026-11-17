@@ -1,5 +1,56 @@
 # 09 — Changelog
 
+## v3.0.0 — Major Workflow Update
+
+**Engine:** Unreal Engine 5.8 (tested with 5.8.4)
+**Previous public release:** v2.0.0
+
+PCG Pro Tools v3.0.0 adds editor workflows for building, reusing, checking, and understanding PCG graphs. It adds no new runtime node and no new template or preset: the plugin still ships 22 custom nodes, 23 templates, 13 presets, and 21 demo maps, plus the new Showcase Valley example level.
+
+It is not a breaking update. Node classes, properties, template and preset IDs keep their names, no Core Redirects are needed, and 2.0 graphs, presets, and saved PCG components load without migration. See [19 — Upgrading from 2.0](19_Upgrading_From_2.0.md).
+
+The UE 5.7 build remains v1.1.1 and does not include these features.
+
+### Added
+
+- **Quick Setup** — 20 of the 23 templates become your own editable PCG graph with your meshes, weights, and parameters. Warnings appear before anything is created, existing assets are never overwritten, and a setup can be reconfigured from the Graph Inspector as one Undo step. Not available for Biome Transition, Water Body Avoidance, and Weighted Selection. See [10](10_Quick_Setup.md).
+- **Multi-Mesh Scatter settings per mesh** — scale, random yaw, tilt, and Z offset for each of up to 16 meshes. See [12](12_Multi_Mesh_Per_Mesh_Settings.md).
+- **Saved Setups (recipes)** — save a Quick Setup and reuse it in another level; loading refuses recipes for other templates. See [13](13_Saved_Setups.md).
+- **Generation Report** in the Graph Inspector — point change, what changed since the previous run, node warnings, slowest nodes, and **Find First Empty Node**. See [11](11_Generation_Report_and_Setup_Check.md).
+- **Add Copy to Level** and **Reset to Template** (per value or per node, for copies made by this version). See [14](14_Editable_Copies_and_Reset_to_Template.md).
+- **Multiple road splines** for Roadside Generator and Spline Road, and **exclusion zones** by actor tag. See [15](15_Multiple_Road_Splines.md) and [16](16_Exclusion_Zones.md).
+- **Showcase Valley** — an example level with 14 PCG volumes. Terrain, roads, and cabin are hand-built; vegetation is placed by PCG; the meshes are original. See [17](17_Showcase_Valley.md).
+
+### Improved
+
+- **Setup Check** in the Graph Inspector replaces the Setup Validator dialog.
+- The Template Library shows each template's purpose, requirements, and Quick Setup availability; search also covers the description, and categories were refined.
+- Performance Guard warnings also appear on the PCG node and in the Generation Report.
+- Shipped plugin graphs are protected: Reset and Apply Preset first offer **Make Editable Copy**.
+- **Save as Preset** never overwrites an existing asset; **Apply Preset** lists applied, unchanged, and skipped entries.
+- Clearer explanations of the seed controls and clearer tooltip and dialog texts for Performance Guard and Debug Overlay; the Graph Inspector shows a context line for the selected actor.
+
+### Changed
+
+- The unused settings **Deterministic Mode** and **Default Random Seed** are hidden in Project Settings. They never had an effect; saved values still load.
+- Undo and Redo use Unreal's native PCG refresh. A component with **Regenerate In Editor** turned off is not regenerated automatically after Undo or Redo.
+- **Apply Preset** with custom presets that hold several entries for one property applies N entries to N nodes in graph order, and otherwise skips and lists them. The 13 included presets behave as before.
+- **Apply Preset** marks assets as modified only when a value really changes.
+- C++: `UPCGProKitPresetAsset::ApplyToComponent` keeps its signature and returns `false` when nothing changes. `PreviewApply`, `ApplyToGraph`, and `FPCGProKitPresetApplyReport` are new. No API was removed.
+
+### Fixed
+
+- **Regenerate Selected** now also regenerates components that were already generated and unchanged (it does not clear the PCG cache).
+- Undo and Redo no longer force a global cache flush and full regeneration; a seed change is one Undo step.
+- The Distance To Nearest Tag setup check now tests the actor tag the graph actually reads.
+- The **Distance Tag template** (and the Showcase Valley diagnostic graph) now updates when a `POI` actor outside the volume bounds changes. Copies made with 2.0 keep their setting; see [19](19_Upgrading_From_2.0.md).
+- The Graph Inspector shows node headers even when a node's first parameter is hidden.
+- Debug Overlay: cancelling its performance-warning dialog keeps the current scope and no longer reports that the overlay started, and a Performance Guard threshold of 0 no longer colors everything red.
+- Weighted Selection By Tag: the **Selection Count** tooltip is corrected.
+- Descriptions of three presets and the Spline Offset tooltips are corrected.
+
+---
+
 ## v2.0.0 — Major Update
 
 **Engine:** Unreal Engine 5.8  

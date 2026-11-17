@@ -9,9 +9,9 @@
 | Supported target platforms | Win64, Linux, Mac |
 | Hard Water-plugin dependency | None |
 
-PCG Pro Tools v2.0.0 requires no engine modifications.
+PCG Pro Tools v3.0.0 requires no engine modifications and was tested with Unreal Engine 5.8.4.
 
-> UE 5.7 users must remain on PCG Pro Tools v1.1.1. The v2.0.0 `.uplugin` requires EngineVersion `5.8.0`.
+> UE 5.7 users must remain on PCG Pro Tools v1.1.1. The v3.0.0 `.uplugin` requires EngineVersion `5.8.0`.
 
 ---
 
@@ -84,7 +84,7 @@ See [Troubleshooting](08_Troubleshooting.md) if any item is missing.
 4. Select its PCG actor or volume.
 5. Press **Generate** when the graph uses On Demand generation.
 
-PCG Pro Tools v2.0.0 includes **21 demo maps**:
+PCG Pro Tools v3.0.0 includes **21 demo maps** and the **Showcase Valley** example level (`/PCGProKit/maps/Showcase_Valley`, see [17 — Showcase Valley](17_Showcase_Valley.md)):
 
 | Demo map | Purpose |
 |---|---|
@@ -124,7 +124,15 @@ These assets are available with the required PCG plugin and are used only to vis
 
 ---
 
-## Upgrading from v1.1.1 to v2.0.0
+## Upgrading from v2.0.0 to v3.0.0
+
+PCG Pro Tools 3.0 is not a breaking update. Use the replace procedure below (steps 1–9, with the v3.0.0 plugin folder), then see [19 — Upgrading from 2.0](19_Upgrading_From_2.0.md) for the few behaviour changes.
+
+---
+
+## Upgrading from v1.1.1 to v2.0.0 or v3.0.0
+
+The same steps apply to a project that already runs on Unreal Engine 5.8 with v1.1.1. UE 5.7 projects stay on v1.1.1.
 
 1. Back up the project or commit the current state to source control.
 2. Close Unreal Editor and the IDE.
@@ -134,7 +142,7 @@ These assets are available with the required PCG plugin and are used only to vis
    <YourProject>/Plugins/PCGProKit/
    ```
 
-4. Copy the v2.0.0 plugin folder into the same location.
+4. Copy the new plugin folder into the same location.
 5. Delete generated build data:
 
    ```text
@@ -151,10 +159,10 @@ These assets are available with the required PCG plugin and are used only to vis
 
 ### Compatibility
 
-- Existing v1.1.1 graph assets remain compatible.
+- Existing v1.1.1 and v2.0.0 graph assets remain compatible.
 - The 17 existing node classes retain their v1.1.1 names, properties, defaults, clamps, and pins.
-- No v1.1.1-to-v2.0.0 asset rename or Core Redirect is required.
-- Existing v1.1.1 presets remain compatible.
+- No asset rename or Core Redirect is required for v1.1.1 → v2.0.0 or v2.0.0 → v3.0.0.
+- Existing presets remain compatible.
 
 Historical v1.0-to-v1.1 breaking changes are retained only in the [Changelog](09_Changelog.md).
 

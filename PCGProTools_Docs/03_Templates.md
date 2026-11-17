@@ -1,10 +1,10 @@
 # 03 — Templates
 
-PCG Pro Tools v2.0.0 includes **23 graph templates** in `Plugins/PCGProKit Content/Templates/`.
+PCG Pro Tools v3.0.0 includes **23 graph templates** in `Plugins/PCGProKit Content/Templates/`.
 
 Templates are ready-made PCG graphs that demonstrate individual nodes or complete workflows. Add them through the Template Library, or inspect them directly in plugin content.
 
-> Do not edit shipped template assets in place. Use **Create Editable Copy** to copy a template into `/Game/PCG/` before structural changes.
+> Do not edit shipped template assets in place. Use **Quick Setup…**, **Add Copy to Level**, or **Create Editable Copy** to work on a project-owned graph in `/Game/PCG/` before structural changes. 20 of the 23 templates support Quick Setup (not Biome Transition, Water Body Avoidance, Weighted Selection); see [10 — Quick Setup](10_Quick_Setup.md).
 
 ---
 
